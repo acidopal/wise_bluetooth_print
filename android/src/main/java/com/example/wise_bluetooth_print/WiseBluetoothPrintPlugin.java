@@ -79,7 +79,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         if (printIndex == i) {
           BluetoothDevice pairedDevice = pairedDevicesArray[i];
           ParcelUuid[] uuids = pairedDevice.getUuids();
-          bool isFood = pairedDevice.food;
           UUID s = uuids[0].getUuid();
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
@@ -130,43 +129,5 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     channel.setMethodCallHandler(null);
-  }
-}
-
-public class ModifiedBluetoothDevice extends BluetoothDevice {
-  private boolean food;
-  private boolean drink;
-  private boolean receipt;
-
-  public ModifiedBluetoothDevice(String name, String address, boolean food, boolean drink, boolean receipt) {
-    super(name, address);
-    this.food = food;
-    this.drink = drink;
-    this.receipt = receipt;
-  }
-
-  // Getters and setters for the new boolean variables
-  public boolean hasFood() {
-    return food;
-  }
-
-  public void setFood(boolean food) {
-    this.food = food;
-  }
-
-  public boolean hasDrink() {
-    return drink;
-  }
-
-  public void setDrink(boolean drink) {
-    this.drink = drink;
-  }
-
-  public boolean hasReceipt() {
-    return receipt;
-  }
-
-  public void setReceipt(boolean receipt) {
-    this.receipt = receipt;
   }
 }
