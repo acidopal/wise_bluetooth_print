@@ -17,12 +17,16 @@ class WiseBluetoothPrint {
       devices.add(PairedDevice(
           name: ret[i] as String,
           hardwareAddress: ret[i + 1] as String,
-          socketId: ret[i + 2] as String));
+          socketId: ret[i + 2] as String,
+          food: false,
+          drink: false,
+          receipt: false));
     }
     return devices;
   }
 
-  static Future<bool> print(String deviceUUID, String printText, [Map? options]) async {
+  static Future<bool> print(String deviceUUID, String printText,
+      [Map? options]) async {
     final Map<String, dynamic> params = <String, dynamic>{
       'printText': printText,
       'deviceUUID': deviceUUID,
