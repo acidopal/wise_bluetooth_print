@@ -1,4 +1,5 @@
 class PairedDevice {
+  int index;
   String name;
   String hardwareAddress;
   String socketId;
@@ -7,7 +8,8 @@ class PairedDevice {
   bool receipt;
 
   PairedDevice(
-      {required this.name,
+      {required this.index,
+      required this.name,
       required this.hardwareAddress,
       required this.socketId,
       required this.food,
@@ -15,6 +17,7 @@ class PairedDevice {
       required this.receipt});
 
   static PairedDevice empty = PairedDevice(
+      index: 0,
       name: '',
       hardwareAddress: '',
       socketId: '',
@@ -24,6 +27,7 @@ class PairedDevice {
 
   factory PairedDevice.fromJson(Map<String, dynamic> json) {
     return PairedDevice(
+      index: json['index'],
       name: json['name'],
       hardwareAddress: json['hardwareAddress'],
       socketId: json['socketId'],
@@ -37,6 +41,7 @@ class PairedDevice {
     List<PairedDevice> devices = <PairedDevice>[];
     for (int i = 0; i < json.length; i++) {
       devices.add(PairedDevice(
+          index: json[i]['index'],
           name: json[i]['name'],
           hardwareAddress: json[i]['hardwareAddress'],
           socketId: json[i]['socketId'],

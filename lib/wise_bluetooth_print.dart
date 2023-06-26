@@ -15,6 +15,7 @@ class WiseBluetoothPrint {
     List<PairedDevice> devices = <PairedDevice>[];
     for (int i = 0; i < ret.length; i = i + 3) {
       devices.add(PairedDevice(
+          index: i,
           name: ret[i] as String,
           hardwareAddress: ret[i + 1] as String,
           socketId: ret[i + 2] as String,
@@ -25,12 +26,13 @@ class WiseBluetoothPrint {
     return devices;
   }
 
-  static Future<bool> print(String deviceUUID, String printText,
+  static Future<bool> print(String deviceUUID, String printText, int index,
       [Map? options]) async {
     final Map<String, dynamic> params = <String, dynamic>{
       'printText': printText,
       'deviceUUID': deviceUUID,
-      'timeout': options?['timeout'] ?? 100
+      'timeout': options?['timeout'] ?? 100,
+      'printIndex': index,
     };
     var ret = await _channel.invokeMethod('print', params);
     return ret;

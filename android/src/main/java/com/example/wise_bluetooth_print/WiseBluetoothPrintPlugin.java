@@ -39,13 +39,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     if (call.method.equals("getPlatformVersion")) {
       result.success("Android " + android.os.Build.VERSION.RELEASE);
-    } else if(call.method.equals("getPairedDevices")) {
+    } else if (call.method.equals("getPairedDevices")) {
       ArrayList<String> deviceInfoList = new ArrayList<String>();
       BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
       if (bluetooth != null) {
         if (bluetooth.isEnabled()) {
           Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-          
+
           if (pairedDevices.size() > 0) {
             for (BluetoothDevice device : pairedDevices) {
               String deviceName = device.getName();
@@ -63,53 +63,59 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       }
       bluetooth.cancelDiscovery();
       result.success(deviceInfoList);
-    } else if(call.method.equals("print")) {
+    } else if (call.method.equals("print")) {
       String printStr = call.argument("printText");
       String uuid = call.argument("deviceUUID");
       int timeout = call.argument("timeout");
+      int printIndex = call.argument("printIndex");
 
       BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-      
+
       Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-      for (BluetoothDevice pairedDevice : pairedDevices) {
-        ParcelUuid[] uuids = pairedDevice.getUuids();
-        UUID s = uuids[0].getUuid();
-        if (s.toString().equals(uuid)) {
-          bluetooth.cancelDiscovery();
+      BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
+      int size = pairedDevicesArray.length;
 
-          try {
-            final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+      for (int i = 0; i < size; i++) {
+        if (printIndex == i) {
+          BluetoothDevice pairedDevice = pairedDevicesArray[i];
+          ParcelUuid[] uuids = pairedDevice.getUuids();
+          bool isFood = pairedDevice.food;
+          UUID s = uuids[0].getUuid();
+          if (s.toString().equals(uuid)) {
+            bluetooth.cancelDiscovery();
 
-            socket.connect();
-            outputStream = socket.getOutputStream();
-            inStream = socket.getInputStream();
+            try {
+              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
 
-            write(printStr);
+              socket.connect();
+              outputStream = socket.getOutputStream();
+              inStream = socket.getInputStream();
 
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-              @Override
-              public void run() {
-                try 
-                {
-                  socket.close();
-                } 
-                catch (IOException e) { 
-                  tempText = "1";
-                  result.success(false);
+              write(printStr);
+
+              final Handler handler = new Handler();
+              handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                  try {
+                    socket.close();
+                  } catch (IOException e) {
+                    tempText = "1";
+                    result.success(false);
+                  }
                 }
-              }
-            }, timeout);
-          } catch (IOException e){
+              }, timeout);
+            } catch (IOException e) {
+              tempText = "1";
+              result.success(false);
+            }
+          } else {
             tempText = "1";
             result.success(false);
           }
-        } else {
-          tempText = "1";
-          result.success(false);
         }
       }
-      if(tempText != "1") {
+      if (tempText != "1") {
         result.success(true);
       }
     } else {
@@ -124,5 +130,43 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     channel.setMethodCallHandler(null);
+  }
+}
+
+public class ModifiedBluetoothDevice extends BluetoothDevice {
+  private boolean food;
+  private boolean drink;
+  private boolean receipt;
+
+  public ModifiedBluetoothDevice(String name, String address, boolean food, boolean drink, boolean receipt) {
+    super(name, address);
+    this.food = food;
+    this.drink = drink;
+    this.receipt = receipt;
+  }
+
+  // Getters and setters for the new boolean variables
+  public boolean hasFood() {
+    return food;
+  }
+
+  public void setFood(boolean food) {
+    this.food = food;
+  }
+
+  public boolean hasDrink() {
+    return drink;
+  }
+
+  public void setDrink(boolean drink) {
+    this.drink = drink;
+  }
+
+  public boolean hasReceipt() {
+    return receipt;
+  }
+
+  public void setReceipt(boolean receipt) {
+    this.receipt = receipt;
   }
 }
