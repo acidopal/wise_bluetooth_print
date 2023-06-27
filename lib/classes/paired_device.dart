@@ -1,11 +1,11 @@
 class PairedDevice {
-  int index;
-  String name;
-  String hardwareAddress;
-  String socketId;
-  bool food;
-  bool drink;
-  bool receipt;
+  int? index;
+  String? name;
+  String? hardwareAddress;
+  String? socketId;
+  bool? food;
+  bool? drink;
+  bool? receipt;
 
   PairedDevice(
       {required this.index,
@@ -16,7 +16,29 @@ class PairedDevice {
       required this.drink,
       required this.receipt});
 
-  static PairedDevice empty = PairedDevice(
+  PairedDevice.fromJson(Map<String, dynamic> json) {
+    index = json['index'];
+    name = json['name'];
+    hardwareAddress = json['hardwareAddress'];
+    socketId = json['socketId'];
+    food = json['food'];
+    drink = json['drink'];
+    receipt = json['receipt'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['index'] = index;
+    data['name'] = name;
+    data['hardwareAddress'] = hardwareAddress;
+    data['socketId'] = socketId;
+    data['food'] = food;
+    data['drink'] = drink;
+    data['receipt'] = receipt;
+    return data;
+  }
+
+  PairedDevice empty = PairedDevice(
       index: 0,
       name: '',
       hardwareAddress: '',
@@ -25,19 +47,7 @@ class PairedDevice {
       drink: false,
       receipt: false);
 
-  factory PairedDevice.fromJson(Map<String, dynamic> json) {
-    return PairedDevice(
-      index: json['index'],
-      name: json['name'],
-      hardwareAddress: json['hardwareAddress'],
-      socketId: json['socketId'],
-      food: json['food'],
-      drink: json['drink'],
-      receipt: json['receipt'],
-    );
-  }
-
-  static List<PairedDevice> fromJsonToList(List<dynamic> json) {
+  List<PairedDevice> fromJsonToList(List<dynamic> json) {
     List<PairedDevice> devices = <PairedDevice>[];
     for (int i = 0; i < json.length; i++) {
       devices.add(PairedDevice(
