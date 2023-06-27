@@ -51,4 +51,24 @@ class PairedDevice {
     }
     return devices;
   }
+
+  PairedDevice copyWith({
+    int? index,
+    String? name,
+    String? hardwareAddress,
+    String? socketId,
+    bool? food,
+    bool? drink,
+    bool? receipt,
+  }) {
+    return PairedDevice(
+      index: index ?? this.index,
+      name: name ?? this.name,
+      hardwareAddress: hardwareAddress ?? this.hardwareAddress,
+      socketId: socketId ?? this.socketId,
+      food: food ?? this.food,
+      drink: drink ?? this.drink,
+      receipt: receipt ?? this.receipt,
+    );
+  }
 }
