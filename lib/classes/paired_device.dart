@@ -47,7 +47,7 @@ class PairedDevice {
       drink: false,
       receipt: false);
 
-  List<PairedDevice> fromJsonToList(List<dynamic> json) {
+  static List<PairedDevice> fromJsonToList(List<dynamic> json) {
     List<PairedDevice> devices = <PairedDevice>[];
     for (int i = 0; i < json.length; i++) {
       devices.add(PairedDevice(
