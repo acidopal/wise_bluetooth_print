@@ -25,18 +25,6 @@ class PairedDevice {
       drink: false,
       receipt: false);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'index': index,
-      'name': name,
-      'hardwareAddress': hardwareAddress,
-      'socketId': socketId,
-      'food': food,
-      'drink': drink,
-      'receipt': receipt,
-    };
-  }
-
   factory PairedDevice.fromJson(Map<String, dynamic> json) {
     return PairedDevice(
       index: json['index'],
