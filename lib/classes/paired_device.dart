@@ -16,14 +16,16 @@ class PairedDevice {
       required this.drink,
       required this.receipt});
 
-  PairedDevice.fromJson(Map<String, dynamic> json) {
-    index = json['index'];
-    name = json['name'];
-    hardwareAddress = json['hardwareAddress'];
-    socketId = json['socketId'];
-    food = json['food'];
-    drink = json['drink'];
-    receipt = json['receipt'];
+  factory PairedDevice.fromJson(Map<String, dynamic> json) {
+    return PairedDevice(
+      index: json['index'],
+      name: json['name'],
+      hardwareAddress: json['hardwareAddress'],
+      socketId: json['socketId'],
+      food: json['food'],
+      drink: json['drink'],
+      receipt: json['receipt'],
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -38,7 +40,7 @@ class PairedDevice {
     return data;
   }
 
-  PairedDevice empty = PairedDevice(
+  static PairedDevice empty = PairedDevice(
       index: 0,
       name: '',
       hardwareAddress: '',
