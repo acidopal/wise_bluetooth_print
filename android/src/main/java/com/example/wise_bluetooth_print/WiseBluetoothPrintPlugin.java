@@ -33,6 +33,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
+  EscCommand esc = new EscCommand();
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -70,12 +71,10 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       result.success(deviceInfoList);
     } else if (call.method.equals("print")) {
       String printStr = call.argument("printText");
-      byte[] printImg = call.argument("image");
+      String base64Image = call.argument("image");
       String uuid = call.argument("deviceUUID");
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
-
-      String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
 
       BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
 
@@ -99,6 +98,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               inStream = socket.getInputStream();
 
               if (!base64Image.isEmpty()) {
+                // If an image is provided, decode the Base64 string and add it to the command
                 byte[] decodedImageBytes = Base64.decode(base64Image, Base64.DEFAULT);
                 Bitmap bitmap = BitmapFactory.decodeByteArray(decodedImageBytes, 0, decodedImageBytes.length);
                 esc.addRastBitImage(bitmap, 576, 0);
