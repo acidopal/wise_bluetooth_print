@@ -9,9 +9,10 @@ import android.os.ParcelUuid;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import java.io.IOException;
-import android.util.Log;
 import android.content.res.AssetManager;
-import io.flutter.embedding.engine.FlutterMain;
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
+import io.flutter.embedding.engine.FlutterEngine;
 
 import androidx.annotation.NonNull;
 
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
+  private FlutterPluginBinding pluginBinding;
   private MethodChannel channel;
   private OutputStream outputStream;
   private InputStream inStream;
@@ -39,6 +41,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    pluginBinding = flutterPluginBinding;
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
     channel.setMethodCallHandler(this);
   }
@@ -159,35 +162,29 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
       if (bmp != null) {
         byte[] command = Utils.decodeBitmap(bmp);
-        outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
         outputStream.write(command);
-      } else {
-        Log.e("Print Photo error", "The file doesn't exist");
       }
       result.success(true);
     } catch (IOException ex) {
-      Log.e(TAG, ex.getMessage(), ex);
-      result.error("write_error", ex.getMessage(), exceptionToString(ex));
+      result.success(false);
     }
   }
 
   private void printImage(Result result, String imagePath, int timeout) {
     try {
-      byte[] imageBytes = getImageBytesFromPath(imagePath);
+      byte[] imageBytes = getImageBytesFromPath(imagePath, pluginBinding);
       if (imageBytes != null) {
         printImageBytes(result, imageBytes);
       } else {
-        Log.e("Print Image error", "Failed to read image file");
         result.success(false);
       }
     } catch (IOException ex) {
-      Log.e(TAG, ex.getMessage(), ex);
       result.error("write_error", ex.getMessage(), exceptionToString(ex));
     }
   }
 
   private byte[] getImageBytesFromPath(String imagePath) throws IOException {
-    AssetManager assetManager = getFlutterAssets();
+    AssetManager assetManager = pluginBinding.getApplicationContext().getAssets();
     InputStream inputStream = assetManager.open(imagePath);
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -199,11 +196,5 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     inputStream.close();
     return bos.toByteArray();
-  }
-
-  private AssetManager getFlutterAssets() throws IOException {
-    Method getAssetManager = FlutterMain.class.getDeclaredMethod("getAssetManager");
-    getAssetManager.setAccessible(true);
-    return (AssetManager) getAssetManager.invoke(null);
   }
 }
