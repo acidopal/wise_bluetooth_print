@@ -5,9 +5,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
 
 import androidx.annotation.NonNull;
 
@@ -20,7 +17,6 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -70,7 +66,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       result.success(deviceInfoList);
     } else if (call.method.equals("print")) {
       String printStr = call.argument("printText");
-      String base64Image = call.argument("image");
       String uuid = call.argument("deviceUUID");
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
@@ -95,31 +90,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               socket.connect();
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
-
-              if (!base64Image.isEmpty()) {
-                // If an image is provided, decode the Base64 string into a Bitmap
-                byte[] decodedImageBytes = Base64.decode(base64Image, Base64.DEFAULT);
-                Bitmap bitmap = BitmapFactory.decodeByteArray(decodedImageBytes, 0, decodedImageBytes.length);
-
-                // Calculate the desired width and height for the scaled bitmap
-                int desiredWidth = 576; // Replace with your desired width
-                int desiredHeight = (int) (bitmap.getHeight() * (desiredWidth / (float) bitmap.getWidth()));
-
-                // Ensure that the desired width and height are greater than 0
-                desiredWidth = Math.max(desiredWidth, 1);
-                desiredHeight = Math.max(desiredHeight, 1);
-
-                // Scale the bitmap to the desired width and height
-                bitmap = Bitmap.createScaledBitmap(bitmap, desiredWidth, desiredHeight, true);
-
-                // Convert the Bitmap to a byte array for writing to the output stream
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                byte[] imageBytes = stream.toByteArray();
-
-                // Write the image bytes to the output stream
-                outputStream.write(imageBytes);
-              }
 
               write(printStr);
 
