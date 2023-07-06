@@ -172,14 +172,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   private void printImage(Result result, String imagePath, int timeout) {
     try {
-      byte[] imageBytes = getImageBytesFromPath(imagePath, pluginBinding);
+      byte[] imageBytes = getImageBytesFromPath(imagePath);
       if (imageBytes != null) {
         printImageBytes(result, imageBytes);
       } else {
         result.success(false);
       }
     } catch (IOException ex) {
-      result.error("write_error", ex.getMessage(), exceptionToString(ex));
+      result.success(false);
     }
   }
 

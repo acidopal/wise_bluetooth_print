@@ -6,7 +6,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public static class Utils {
+public class Utils {
     // UNICODE 0x23 = #
     private static final byte[] UNICODE_TEXT = new byte[] { 0x23, 0x23, 0x23,
             0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23,
