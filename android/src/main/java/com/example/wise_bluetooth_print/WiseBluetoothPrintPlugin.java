@@ -16,7 +16,6 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -96,9 +95,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              if (printImg != null) {
-                // If an image is provided, write it first
-                writeImage(printImg);
+              if (!base64Image.isEmpty()) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                esc.addRastBitImage(bitmap, 576, 0);
               }
 
               write(printStr);
@@ -150,8 +149,4 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     channel.setMethodCallHandler(null);
   }
 
-  private void writeImage(byte[] imageBytes) throws IOException {
-    // Write the image bytes to the output stream
-    outputStream.write(imageBytes);
-  }
 }
