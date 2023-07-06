@@ -95,14 +95,21 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               socket.connect();
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
+
               if (!base64Image.isEmpty()) {
                 // If an image is provided, decode the Base64 string into a Bitmap
                 byte[] decodedImageBytes = Base64.decode(base64Image, Base64.DEFAULT);
                 Bitmap bitmap = BitmapFactory.decodeByteArray(decodedImageBytes, 0, decodedImageBytes.length);
 
-                // Scale the bitmap to the desired width and height
+                // Calculate the desired width and height for the scaled bitmap
                 int desiredWidth = 576; // Replace with your desired width
-                int desiredHeight = 0; // Replace with your desired height or set to 0 to maintain aspect ratio
+                int desiredHeight = (int) (bitmap.getHeight() * (desiredWidth / (float) bitmap.getWidth()));
+
+                // Ensure that the desired width and height are greater than 0
+                desiredWidth = Math.max(desiredWidth, 1);
+                desiredHeight = Math.max(desiredHeight, 1);
+
+                // Scale the bitmap to the desired width and height
                 bitmap = Bitmap.createScaledBitmap(bitmap, desiredWidth, desiredHeight, true);
 
                 // Convert the Bitmap to a byte array for writing to the output stream
