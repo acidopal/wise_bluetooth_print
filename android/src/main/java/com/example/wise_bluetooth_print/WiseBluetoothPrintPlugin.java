@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.ParcelUuid;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 import androidx.annotation.NonNull;
 
@@ -74,6 +75,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
 
+      String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+
       BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
 
       Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
@@ -96,7 +99,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               inStream = socket.getInputStream();
 
               if (!base64Image.isEmpty()) {
-                Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                byte[] decodedImageBytes = Base64.decode(base64Image, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(decodedImageBytes, 0, decodedImageBytes.length);
                 esc.addRastBitImage(bitmap, 576, 0);
               }
 
