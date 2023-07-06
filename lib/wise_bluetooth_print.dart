@@ -27,9 +27,10 @@ class WiseBluetoothPrint {
   }
 
   static Future<bool> print(String deviceUUID, String printText, int index,
-      [Map? options]) async {
+      [Map? options, String? image]) async {
     final Map<String, dynamic> params = <String, dynamic>{
       'printText': printText,
+      'image': image,
       'deviceUUID': deviceUUID,
       'timeout': options?['timeout'] ?? 100,
       'printIndex': index,

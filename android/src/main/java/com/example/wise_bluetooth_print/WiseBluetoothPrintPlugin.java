@@ -66,6 +66,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       result.success(deviceInfoList);
     } else if (call.method.equals("print")) {
       String printStr = call.argument("printText");
+      String printImg = call.argument("image");
       String uuid = call.argument("deviceUUID");
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
@@ -90,6 +91,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               socket.connect();
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
+
+              if (printImg != null && !printImg.isEmpty()) {
+                // If an image is provided, write it first
+                writeImage(printImg);
+              }
 
               write(printStr);
 
@@ -138,5 +144,25 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       handler.removeCallbacks(timeoutRunnable);
     }
     channel.setMethodCallHandler(null);
+  }
+
+  private void writeImage(String imagePath) throws IOException {
+    File imageFile = new File(imagePath);
+    if (!imageFile.exists()) {
+      return; // Handle the case where the image file does not exist
+    }
+
+    Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+    if (bitmap == null) {
+      return; // Unable to decode the image file
+    }
+
+    // Convert the bitmap to a byte array
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+    byte[] imageBytes = byteArrayOutputStream.toByteArray();
+
+    // Write the image bytes to the output stream
+    outputStream.write(imageBytes);
   }
 }
