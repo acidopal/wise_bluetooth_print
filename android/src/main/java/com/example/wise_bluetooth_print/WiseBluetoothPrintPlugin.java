@@ -33,7 +33,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
-  EscCommand esc = new EscCommand();
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
