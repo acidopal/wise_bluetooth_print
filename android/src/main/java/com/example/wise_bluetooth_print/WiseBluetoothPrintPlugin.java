@@ -6,14 +6,6 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.ParcelUuid;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import java.io.IOException;
-import android.content.res.AssetManager;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Method;
-import io.flutter.embedding.engine.FlutterEngine;
-
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -30,7 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
-  private FlutterPluginBinding pluginBinding;
   private MethodChannel channel;
   private OutputStream outputStream;
   private InputStream inStream;
@@ -41,7 +32,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    pluginBinding = flutterPluginBinding;
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
     channel.setMethodCallHandler(this);
   }
@@ -101,8 +91,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printImage(result, "assets/icons/icon.png", timeout);
-
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -150,51 +138,5 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       handler.removeCallbacks(timeoutRunnable);
     }
     channel.setMethodCallHandler(null);
-  }
-
-  private void printImageBytes(Result result, byte[] bytes) {
-    if (outputStream == null) {
-      result.error("write_error", "Not connected to a Bluetooth device", null);
-      return;
-    }
-
-    try {
-      Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-      if (bmp != null) {
-        byte[] command = Utils.decodeBitmap(bmp);
-        outputStream.write(command);
-      }
-      result.success(true);
-    } catch (IOException ex) {
-      result.success(false);
-    }
-  }
-
-  private void printImage(Result result, String imagePath, int timeout) {
-    try {
-      byte[] imageBytes = getImageBytesFromPath(imagePath);
-      if (imageBytes != null) {
-        printImageBytes(result, imageBytes);
-      } else {
-        result.success(false);
-      }
-    } catch (IOException ex) {
-      result.success(false);
-    }
-  }
-
-  private byte[] getImageBytesFromPath(String imagePath) throws IOException {
-    AssetManager assetManager = pluginBinding.getApplicationContext().getAssets();
-    InputStream inputStream = assetManager.open(imagePath);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-    byte[] buffer = new byte[1024];
-    int bytesRead;
-    while ((bytesRead = inputStream.read(buffer)) != -1) {
-      bos.write(buffer, 0, bytesRead);
-    }
-
-    inputStream.close();
-    return bos.toByteArray();
   }
 }
