@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
-/** WiseBluetoothPrintPlugin */
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
-
   private OutputStream outputStream;
   private InputStream inStream;
-  String tempText = "0";
+  private String tempText = "0";
+  private Handler handler;
+  private Runnable timeoutRunnable;
+  private boolean printSuccess = false;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -92,18 +93,25 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
               write(printStr);
 
-              final Handler handler = new Handler();
-              handler.postDelayed(new Runnable() {
+              // Set timeout runnable to handle timeout case
+              timeoutRunnable = new Runnable() {
                 @Override
                 public void run() {
                   try {
                     socket.close();
                   } catch (IOException e) {
                     tempText = "1";
-                    result.success(false);
+                  } finally {
+                    if (!printSuccess) {
+                      result.success(false);
+                    }
                   }
                 }
-              }, timeout);
+              };
+
+              // Schedule the timeout runnable
+              handler = new Handler();
+              handler.postDelayed(timeoutRunnable, timeout);
             } catch (IOException e) {
               tempText = "1";
               result.success(false);
@@ -114,9 +122,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           }
         }
       }
-      if (tempText != "1") {
-        result.success(true);
-      }
     } else {
       result.notImplemented();
     }
@@ -124,10 +129,16 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   public void write(String s) throws IOException {
     outputStream.write(s.getBytes());
+    // Set printSuccess flag to true after successful write
+    printSuccess = true;
   }
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    if (handler != null && timeoutRunnable != null) {
+      // Remove the timeout runnable callback if it is still pending
+      handler.removeCallbacks(timeoutRunnable);
+    }
     channel.setMethodCallHandler(null);
   }
 }
