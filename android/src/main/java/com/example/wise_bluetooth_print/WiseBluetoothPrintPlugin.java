@@ -101,32 +101,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                   try {
                     socket.close();
                   } catch (IOException e) {
-                    // Oh no! Something went wrong in the Bluetooth realm.
-                    // But wait, before we panic, let's take a moment to understand the problem.
-
-                    // First, we need to log the error, so we know what's happening in the shadows.
+                    socket.close();
                     Log.e(TAG, "Bluetooth timeout printing failed: " + e.getMessage());
-
-                    // Now, let's not give up just yet. We can try a little trick to soothe the
-                    // Bluetooth beast.
-                    try {
-                      // Wait for a moment, let's say 500 milliseconds, before trying again.
-                      Thread.sleep(500);
-                    } catch (InterruptedException ex) {
-                      // Oops, our sleep got interrupted. But it's no biggie; we can carry on.
-                    }
-
-                    // Alright, we gave it a moment to breathe. Now, let's close the socket
-                    // gracefully.
-                    try {
-                      socket.close();
-                    } catch (IOException ex) {
-                      // Huh, even closing the socket can be an adventure. But we won't let it break
-                      // us!
-                    }
-
-                    // And finally, let's not forget to inform the result that we did our best, but
-                    // it wasn't meant to be.
                     result.success(false);
                   } finally {
                     result.success(printSuccess);
@@ -138,23 +114,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               handler = new Handler();
               handler.postDelayed(timeoutRunnable, timeout);
             } catch (IOException e) {
-              // Oh no! Something went wrong in the Bluetooth realm.
-              // But wait, before we panic, let's take a moment to understand the problem.
-
-              // First, we need to log the error, so we know what's happening in the shadows.
               Log.e(TAG, "Bluetooth printing failed: " + e.getMessage());
-
-              // Now, let's not give up just yet. We can try a little trick to soothe the
-              // Bluetooth beast.
-              try {
-                // Wait for a moment, let's say 500 milliseconds, before trying again.
-                Thread.sleep(500);
-              } catch (InterruptedException ex) {
-                // Oops, our sleep got interrupted. But it's no biggie; we can carry on.
-              }
-
-              // And finally, let's not forget to inform the result that we did our best, but
-              // it wasn't meant to be.
               result.success(false);
             }
           } else {
