@@ -30,6 +30,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
+  private static final String TAG = "MyActivity";
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -84,7 +85,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               ParcelUuid[] uuids = pairedDevice.getUuids();
               UUID s = uuids[0].getUuid();
               if (!s.toString().equals(uuid)) {
-                throw new BluetoothConnectionException("Device UUID mismatch");
+                Log.e(TAG, "Device UUID mismatch\"");
               }
 
               bluetooth.cancelDiscovery();
@@ -97,12 +98,12 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 write(printStr);
                 socket.close(); // Close the socket after printing successfully
               } catch (IOException e) {
-                throw new BluetoothConnectionException("Bluetooth printing failed", e);
+                Log.e(TAG, "Bluetooth printing failed: " + e.getMessage());
               }
             }
           }
         } catch (Exception e) {
-          throw new BluetoothConnectionException("Printing failed", e);
+          Log.e(TAG, "Printing failed: " + e.getMessage());
         }
       });
     } else {
