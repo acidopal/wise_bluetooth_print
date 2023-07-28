@@ -5,8 +5,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.util.Log;
-import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
 
@@ -27,10 +25,10 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private MethodChannel channel;
   private OutputStream outputStream;
   private InputStream inStream;
+  private String tempText = "0";
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
-  private static final String TAG = "MyActivity";
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -72,44 +70,56 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
 
-      AsyncTask.execute(() -> {
-        try {
-          BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-          Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-          BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
-          int size = pairedDevicesArray.length;
+      BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
 
-          for (int i = 0; i < size; i++) {
-            if (printIndex == i) {
-              BluetoothDevice pairedDevice = pairedDevicesArray[i];
-              ParcelUuid[] uuids = pairedDevice.getUuids();
-              UUID s = uuids[0].getUuid();
-              if (!s.toString().equals(uuid)) {
-                Log.e(TAG, "Device UUID mismatch\"");
-                result.success(false);
-              }
+      Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+      BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
+      int size = pairedDevicesArray.length;
 
-              bluetooth.cancelDiscovery();
+      for (int i = 0; i < size; i++) {
+        if (printIndex == i) {
+          BluetoothDevice pairedDevice = pairedDevicesArray[i];
+          ParcelUuid[] uuids = pairedDevice.getUuids();
+          UUID s = uuids[0].getUuid();
+          if (s.toString().equals(uuid)) {
+            bluetooth.cancelDiscovery();
 
-              try {
-                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-                socket.connect();
-                outputStream = socket.getOutputStream();
-                inStream = socket.getInputStream();
-                write(printStr);
-                socket.close();
-                result.success(true);
-              } catch (IOException e) {
-                Log.e(TAG, "Bluetooth printing failed: " + e.getMessage());
-                result.success(false);
-              }
+            try {
+              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+
+              socket.connect();
+              outputStream = socket.getOutputStream();
+              inStream = socket.getInputStream();
+
+              write(printStr);
+
+              // Set timeout runnable to handle timeout case
+              timeoutRunnable = new Runnable() {
+                @Override
+                public void run() {
+                  try {
+                    socket.close();
+                  } catch (IOException e) {
+                    tempText = "1";
+                  } finally {
+                    result.success(printSuccess);
+                  }
+                }
+              };
+
+              // Schedule the timeout runnable
+              handler = new Handler();
+              handler.postDelayed(timeoutRunnable, timeout);
+            } catch (IOException e) {
+              tempText = "1";
+              result.success(false);
             }
+          } else {
+            tempText = "1";
+            result.success(false);
           }
-        } catch (Exception e) {
-          Log.e(TAG, "Printing failed: " + e.getMessage());
-          result.success(false);
         }
-      });
+      }
     } else {
       result.notImplemented();
     }
