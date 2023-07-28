@@ -29,7 +29,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
-  private static final String TAG = "MyActivity";
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -82,42 +81,21 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           BluetoothDevice pairedDevice = pairedDevicesArray[i];
           ParcelUuid[] uuids = pairedDevice.getUuids();
           UUID s = uuids[0].getUuid();
-          if (s.toString().equals(uuid)) {
-            bluetooth.cancelDiscovery();
+          if (!s.toString().equals(uuid)) {
+            throw new BluetoothConnectionException("Device UUID mismatch");
+          }
 
-            try {
-              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+          bluetooth.cancelDiscovery();
 
-              socket.connect();
-              outputStream = socket.getOutputStream();
-              inStream = socket.getInputStream();
-
-              write(printStr);
-
-              // Set timeout runnable to handle timeout case
-              timeoutRunnable = new Runnable() {
-                @Override
-                public void run() {
-                  try {
-                    socket.close();
-                  } catch (IOException e) {
-                    Log.e(TAG, "Bluetooth timeout printing failed: " + e.getMessage());
-                    result.success(false);
-                  } finally {
-                    result.success(printSuccess);
-                  }
-                }
-              };
-
-              // Schedule the timeout runnable
-              handler = new Handler();
-              handler.postDelayed(timeoutRunnable, timeout);
-            } catch (IOException e) {
-              Log.e(TAG, "Bluetooth printing failed: " + e.getMessage());
-              result.success(false);
-            }
-          } else {
-            result.success(false);
+          try {
+            final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+            socket.connect();
+            outputStream = socket.getOutputStream();
+            inStream = socket.getInputStream();
+            write(printStr);
+            socket.close(); // Close the socket after printing successfully
+          } catch (IOException e) {
+            throw new BluetoothConnectionException("Bluetooth printing failed", e);
           }
         }
       }
