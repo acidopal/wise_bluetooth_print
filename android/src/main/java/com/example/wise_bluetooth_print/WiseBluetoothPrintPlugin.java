@@ -99,6 +99,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                   try {
                     socket.close();
                   } catch (IOException e) {
+                    Log.e("Catch timeout error " + e.toString());
                     result.success(false);
                   } finally {
                     result.success(printSuccess);
@@ -110,6 +111,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               handler = new Handler();
               handler.postDelayed(timeoutRunnable, timeout);
             } catch (IOException e) {
+              Log.e("Catch error " + e.toString());
               result.success(false);
             }
           } else {
