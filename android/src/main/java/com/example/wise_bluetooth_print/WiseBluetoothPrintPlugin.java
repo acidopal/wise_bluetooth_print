@@ -25,7 +25,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private MethodChannel channel;
   private OutputStream outputStream;
   private InputStream inStream;
-  private String tempText = "0";
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
@@ -100,7 +99,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                   try {
                     socket.close();
                   } catch (IOException e) {
-                    tempText = "1";
+                    result.success(false);
                   } finally {
                     result.success(printSuccess);
                   }
@@ -111,11 +110,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               handler = new Handler();
               handler.postDelayed(timeoutRunnable, timeout);
             } catch (IOException e) {
-              tempText = "1";
               result.success(false);
             }
           } else {
-            tempText = "1";
             result.success(false);
           }
         }
