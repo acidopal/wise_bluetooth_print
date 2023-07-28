@@ -153,15 +153,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 // Oops, our sleep got interrupted. But it's no biggie; we can carry on.
               }
 
-              // Alright, we gave it a moment to breathe. Now, let's close the socket
-              // gracefully.
-              try {
-                socket.close();
-              } catch (IOException ex) {
-                // Huh, even closing the socket can be an adventure. But we won't let it break
-                // us!
-              }
-
               // And finally, let's not forget to inform the result that we did our best, but
               // it wasn't meant to be.
               result.success(false);
