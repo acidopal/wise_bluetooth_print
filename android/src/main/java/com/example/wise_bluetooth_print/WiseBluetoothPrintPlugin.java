@@ -101,7 +101,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                   try {
                     socket.close();
                   } catch (IOException e) {
-                    socket.close();
                     Log.e(TAG, "Bluetooth timeout printing failed: " + e.getMessage());
                     result.success(false);
                   } finally {
