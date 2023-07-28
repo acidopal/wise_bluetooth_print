@@ -29,6 +29,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Handler handler;
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
+  private static final String TAG = "MyActivity";
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
