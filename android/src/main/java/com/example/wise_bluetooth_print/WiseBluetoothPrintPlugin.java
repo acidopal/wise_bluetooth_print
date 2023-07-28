@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
 
@@ -70,35 +71,40 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       int timeout = call.argument("timeout");
       int printIndex = call.argument("printIndex");
 
-      BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+      AsyncTask.execute(() -> {
+        try {
+          BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+          Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+          BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
+          int size = pairedDevicesArray.length;
 
-      Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-      BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
-      int size = pairedDevicesArray.length;
+          for (int i = 0; i < size; i++) {
+            if (printIndex == i) {
+              BluetoothDevice pairedDevice = pairedDevicesArray[i];
+              ParcelUuid[] uuids = pairedDevice.getUuids();
+              UUID s = uuids[0].getUuid();
+              if (!s.toString().equals(uuid)) {
+                throw new BluetoothConnectionException("Device UUID mismatch");
+              }
 
-      for (int i = 0; i < size; i++) {
-        if (printIndex == i) {
-          BluetoothDevice pairedDevice = pairedDevicesArray[i];
-          ParcelUuid[] uuids = pairedDevice.getUuids();
-          UUID s = uuids[0].getUuid();
-          if (!s.toString().equals(uuid)) {
-            throw new BluetoothConnectionException("Device UUID mismatch");
+              bluetooth.cancelDiscovery();
+
+              try {
+                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+                socket.connect();
+                outputStream = socket.getOutputStream();
+                inStream = socket.getInputStream();
+                write(printStr);
+                socket.close(); // Close the socket after printing successfully
+              } catch (IOException e) {
+                throw new BluetoothConnectionException("Bluetooth printing failed", e);
+              }
+            }
           }
-
-          bluetooth.cancelDiscovery();
-
-          try {
-            final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-            socket.connect();
-            outputStream = socket.getOutputStream();
-            inStream = socket.getInputStream();
-            write(printStr);
-            socket.close(); // Close the socket after printing successfully
-          } catch (IOException e) {
-            throw new BluetoothConnectionException("Bluetooth printing failed", e);
-          }
+        } catch (Exception e) {
+          throw new BluetoothConnectionException("Printing failed", e);
         }
-      }
+      });
     } else {
       result.notImplemented();
     }
