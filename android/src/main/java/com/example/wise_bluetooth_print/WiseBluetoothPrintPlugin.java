@@ -149,54 +149,40 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     printSuccess = true;
   }
 
- public void printPhotoFromUrl(String imageUrl) {
-    new AsyncTask<String, Void, Bitmap>() {
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            String imageUrl = params[0];
-            try {
-                URL url = new URL(imageUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                
-                InputStream inputStream = connection.getInputStream();
-                return BitmapFactory.decodeStream(inputStream);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+  public void printPhotoFromUrl(String imageUrl) {
+    new AsyncTask<String, Void, byte[]>() {
+      @Override
+      protected byte[] doInBackground(String... params) {
+        String imageUrl = params[0];
+        try {
+          URL url = new URL(imageUrl);
+          HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+          connection.setDoInput(true);
+          connection.connect();
 
-        @Override
-        protected void onPostExecute(Bitmap bmp) {
-            if (bmp != null) {
-                processBitmap(bmp);
-            } else {
-                Log.e("Print Photo error", "Failed to decode image from URL");
-            }
+          InputStream inputStream = connection.getInputStream();
+          Bitmap bmp = BitmapFactory.decodeStream(inputStream);
+          if (bmp != null) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            return outputStream.toByteArray();
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
         }
+        return null;
+      }
+
+      @Override
+      protected void onPostExecute(byte[] command) {
+        if (command != null) {
+          outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
+          write(command);
+        } else {
+          Log.e("Print Photo error", "Failed to print image");
+        }
+      }
     }.execute(imageUrl);
-}
-
-private void processBitmap(Bitmap bmp) {
-      new AsyncTask<Bitmap, Void, byte[]>() {
-          @Override
-          protected byte[] doInBackground(Bitmap... bitmaps) {
-              Bitmap bitmap = bitmaps[0];
-              return Utils.decodeBitmap(bitmap);
-          }
-
-          @Override 
-          protected void onPostExecute(byte[] command) {
-              if (command != null) {
-                  outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
-                  write(command);
-              } else {
-                  Log.e("Print Photo error", "Failed to process image");
-              }
-          }
-      }.execute(bmp);
   }
 
   @Override
