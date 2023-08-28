@@ -28,7 +28,7 @@ import android.graphics.BitmapFactory;
 
 import java.net.URL;
 import java.net.HttpURLConnection;
-import android.os.StrictMode; 
+import android.os.StrictMode;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
@@ -101,7 +101,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
+              printPhotoFromUrl(imageUrl);
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -152,9 +152,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     try {
 
       if (android.os.Build.VERSION.SDK_INT > 9) {
-          StrictMode.ThreadPolicy policy = 
-              new StrictMode.ThreadPolicy.Builder().permitAll().build();
-          StrictMode.setThreadPolicy(policy);
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
       }
 
       URL url = new URL(imageUrl);
