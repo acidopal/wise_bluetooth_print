@@ -100,7 +100,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
+              if (isInternetConnected()) {
+                printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
+              }
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -177,5 +179,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       handler.removeCallbacks(timeoutRunnable);
     }
     channel.setMethodCallHandler(null);
+  }
+
+  public boolean isInternetConnected() {
+    ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+    return networkInfo != null && networkInfo.isConnected();
   }
 }
