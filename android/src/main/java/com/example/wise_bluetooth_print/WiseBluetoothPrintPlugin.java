@@ -139,6 +139,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   }
 
   public void write(String s) throws IOException {
+    outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
     outputStream.write(s.getBytes());
     // Set printSuccess flag to true after successful write
     printSuccess = true;
