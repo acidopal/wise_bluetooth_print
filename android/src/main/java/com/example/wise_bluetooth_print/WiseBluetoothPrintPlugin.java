@@ -29,8 +29,6 @@ import android.graphics.BitmapFactory;
 import java.net.URL;
 import java.net.HttpURLConnection;
 
-import android.os.AsyncTask;
-
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private OutputStream outputStream;
@@ -103,7 +101,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               inStream = socket.getInputStream();
 
               printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
-              // write(printStr);
+              write(printStr);
 
               // Set timeout runnable to handle timeout case
               timeoutRunnable = new Runnable() {
@@ -149,54 +147,22 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     printSuccess = true;
   }
 
- public void printPhotoFromUrl(String imageUrl) {
-    new AsyncTask<String, Void, Bitmap>() {
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            String imageUrl = params[0];
-            try {
-                URL url = new URL(imageUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                
-                InputStream inputStream = connection.getInputStream();
-                return BitmapFactory.decodeStream(inputStream);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+  public void printPhotoFromUrl(String imageUrl) {
+    try {
+      val `in` = java.net.URL(imageURL).openStream()
+      Bitmap bmp = BitmapFactory.decodeStream(in);
 
-        @Override
-        protected void onPostExecute(Bitmap bmp) {
-            if (bmp != null) {
-                processBitmap(bmp);
-            } else {
-                Log.e("Print Photo error", "Failed to decode image from URL");
-            }
-        }
-    }.execute(imageUrl);
-}
-
-private void processBitmap(Bitmap bmp) {
-      new AsyncTask<Bitmap, Void, byte[]>() {
-          @Override
-          protected byte[] doInBackground(Bitmap... bitmaps) {
-              Bitmap bitmap = bitmaps[0];
-              return Utils.decodeBitmap(bitmap);
-          }
-
-          @Override 
-          protected void onPostExecute(byte[] command) {
-              if (command != null) {
-                  outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
-                  write(command);
-              } else {
-                  Log.e("Print Photo error", "Failed to process image");
-              }
-          }
-      }.execute(bmp);
+      if (bmp != null) {
+        byte[] command = Utils.decodeBitmap(bmp);
+        outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
+        write(command);
+      } else {
+        Log.e("Print Photo error", "Failed to decode image from URL");
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Log.e("PrintTools", "Error while printing photo from URL");
+    }
   }
 
   @Override
