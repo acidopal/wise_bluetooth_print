@@ -149,7 +149,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   public void printPhotoFromUrl(String imageUrl) {
     try {
-      val `in` = java.net.URL(imageURL).openStream()
+      val `in` = java.net.URL(imageURL).openStream();
       Bitmap bmp = BitmapFactory.decodeStream(in);
 
       if (bmp != null) {
