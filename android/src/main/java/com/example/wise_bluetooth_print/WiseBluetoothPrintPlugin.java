@@ -101,7 +101,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               inStream = socket.getInputStream();
 
               printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
-              write(printStr);
+              // write(printStr);
 
               // Set timeout runnable to handle timeout case
               timeoutRunnable = new Runnable() {
