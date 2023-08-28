@@ -139,12 +139,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   }
 
   public void write(String s) throws IOException {
+    outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
     outputStream.write(s.getBytes());
-    // Set printSuccess flag to true after successful write
+    
     printSuccess = true;
   }
 
   public void write(byte[] data) throws IOException {
+    outputStream.write(PrinterCommands.SELECT_BIT_IMAGE_MODE);
     outputStream.write(data);
     // Set printSuccess flag to true after successful write
     printSuccess = true;
@@ -157,8 +159,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         Bitmap bmp = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
         if (bmp != null) {
           byte[] command = Utils.decodeBitmap(bmp);
-          outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
+          outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
           write(command);
+          outputStream.write(PrinterCommands.ESC_ENTER);
         } else {
           Log.e("Print Photo error", "Failed to decode image");
         }
