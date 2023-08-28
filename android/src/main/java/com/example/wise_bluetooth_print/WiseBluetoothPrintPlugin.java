@@ -21,6 +21,13 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import java.net.URL;
+import java.net.HttpURLConnection;
+
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private OutputStream outputStream;
@@ -65,6 +72,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       bluetooth.cancelDiscovery();
       result.success(deviceInfoList);
     } else if (call.method.equals("print")) {
+      String imageUrl = call.argument("imageUrl");
       String printStr = call.argument("printText");
       String uuid = call.argument("deviceUUID");
       int timeout = call.argument("timeout");
@@ -91,6 +99,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
+              printPhotoFromURL("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -138,5 +147,28 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       handler.removeCallbacks(timeoutRunnable);
     }
     channel.setMethodCallHandler(null);
+  }
+
+  public void printPhotoFromUrl(String imageUrl) {
+    try {
+        URL url = new URL(imageUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setDoInput(true);
+        connection.connect();
+        
+        InputStream inputStream = connection.getInputStream();
+        Bitmap bmp = BitmapFactory.decodeStream(inputStream);
+
+        if (bmp != null) {
+            byte[] command = Utils.decodeBitmap(bmp);
+            outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
+            write(command);
+        } else {
+            Log.e("Print Photo error", "Failed to decode image from URL");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        Log.e("PrintTools", "Error while printing photo from URL");
+    }
   }
 }
