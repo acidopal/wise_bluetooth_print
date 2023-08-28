@@ -147,27 +147,54 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     printSuccess = true;
   }
 
-  public void printPhotoFromUrl(String imageUrl) {
-    try {
-      URL url = new URL(imageUrl);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setDoInput(true);
-      connection.connect();
+ public void printPhotoFromUrl(String imageUrl) {
+    new AsyncTask<String, Void, Bitmap>() {
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            String imageUrl = params[0];
+            try {
+                URL url = new URL(imageUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                
+                InputStream inputStream = connection.getInputStream();
+                return BitmapFactory.decodeStream(inputStream);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
 
-      InputStream inputStream = connection.getInputStream();
-      Bitmap bmp = BitmapFactory.decodeStream(inputStream);
+        @Override
+        protected void onPostExecute(Bitmap bmp) {
+            if (bmp != null) {
+                processBitmap(bmp);
+            } else {
+                Log.e("Print Photo error", "Failed to decode image from URL");
+            }
+        }
+    }.execute(imageUrl);
+}
 
-      if (bmp != null) {
-        byte[] command = Utils.decodeBitmap(bmp);
-        outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
-        write(command);
-      } else {
-        Log.e("Print Photo error", "Failed to decode image from URL");
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      Log.e("PrintTools", "Error while printing photo from URL");
-    }
+private void processBitmap(Bitmap bmp) {
+      new AsyncTask<Bitmap, Void, byte[]>() {
+          @Override
+          protected byte[] doInBackground(Bitmap... bitmaps) {
+              Bitmap bitmap = bitmaps[0];
+              return Utils.decodeBitmap(bitmap);
+          }
+
+          @Override
+          protected void onPostExecute(byte[] command) {
+              if (command != null) {
+                  outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
+                  write(command);
+              } else {
+                  Log.e("Print Photo error", "Failed to process image");
+              }
+          }
+      }.execute(bmp);
   }
 
   @Override
@@ -179,3 +206,4 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     channel.setMethodCallHandler(null);
   }
 }
+  
