@@ -28,6 +28,7 @@ import android.graphics.BitmapFactory;
 
 import java.net.URL;
 import java.net.HttpURLConnection;
+import android.os.StrictMode; 
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
@@ -100,9 +101,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              if (isInternetConnected()) {
-                printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
-              }
+              printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -151,7 +150,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   public void printPhotoFromUrl(String imageUrl) {
     try {
-      
+
       if (android.os.Build.VERSION.SDK_INT > 9) {
           StrictMode.ThreadPolicy policy = 
               new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -177,20 +176,5 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       e.printStackTrace();
       Log.e("PrintTools", "Error while printing photo from URL");
     }
-  }
-
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    if (handler != null && timeoutRunnable != null) {
-      // Remove the timeout runnable callback if it is still pending
-      handler.removeCallbacks(timeoutRunnable);
-    }
-    channel.setMethodCallHandler(null);
-  }
-
-  public boolean isInternetConnected() {
-    ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-    return networkInfo != null && networkInfo.isConnected();
   }
 }
