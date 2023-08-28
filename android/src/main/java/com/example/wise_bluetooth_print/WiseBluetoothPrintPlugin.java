@@ -154,13 +154,18 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     try {
       if (imageUrl != null) {
         byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-        write(imageData);
-      } else {
-        Log.e("Print Photo error", "Failed to decode image from URL");
+        Bitmap bmp = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+        if (bmp != null) {
+          byte[] command = Utils.decodeBitmap(bmp);
+          outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
+          write(command);
+        } else {
+          Log.e("Print Photo error", "Failed to decode image");
+        }
       }
     } catch (Exception e) {
       e.printStackTrace();
-      Log.e("PrintTools", "Error while printing photo from URL");
+      Log.e("PrintTools", "Error while printing photo");
     }
   }
 
