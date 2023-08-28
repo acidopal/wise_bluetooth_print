@@ -101,7 +101,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               inStream = socket.getInputStream();
 
               printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
-              // write(printStr);
+              write(printStr);
 
               // Set timeout runnable to handle timeout case
               timeoutRunnable = new Runnable() {
@@ -149,8 +149,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   public void printPhotoFromUrl(String imageUrl) {
     try {
-      val `in` = java.net.URL(imageURL).openStream();
-      Bitmap bmp = BitmapFactory.decodeStream(in);
+      URL url = new URL(imageUrl);
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setDoInput(true);
+      connection.connect();
+
+      InputStream inputStream = connection.getInputStream();
+      Bitmap bmp = BitmapFactory.decodeStream(inputStream);
 
       if (bmp != null) {
         byte[] command = Utils.decodeBitmap(bmp);
