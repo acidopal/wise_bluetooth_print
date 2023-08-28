@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.ParcelUuid;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -99,7 +100,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printPhotoFromURL("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
+              printPhotoFromUrl("https://upload.wikimedia.org/wikipedia/commons/a/a2/Example_logo.jpg");
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -140,6 +141,35 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     printSuccess = true;
   }
 
+  public void write(byte[] data) throws IOException {
+    outputStream.write(data);
+    // Set printSuccess flag to true after successful write
+    printSuccess = true;
+  }
+
+  public void printPhotoFromUrl(String imageUrl) {
+    try {
+      URL url = new URL(imageUrl);
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setDoInput(true);
+      connection.connect();
+
+      InputStream inputStream = connection.getInputStream();
+      Bitmap bmp = BitmapFactory.decodeStream(inputStream);
+
+      if (bmp != null) {
+        byte[] command = Utils.decodeBitmap(bmp);
+        outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
+        write(command);
+      } else {
+        Log.e("Print Photo error", "Failed to decode image from URL");
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Log.e("PrintTools", "Error while printing photo from URL");
+    }
+  }
+
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     if (handler != null && timeoutRunnable != null) {
@@ -147,28 +177,5 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       handler.removeCallbacks(timeoutRunnable);
     }
     channel.setMethodCallHandler(null);
-  }
-
-  public void printPhotoFromUrl(String imageUrl) {
-    try {
-        URL url = new URL(imageUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoInput(true);
-        connection.connect();
-        
-        InputStream inputStream = connection.getInputStream();
-        Bitmap bmp = BitmapFactory.decodeStream(inputStream);
-
-        if (bmp != null) {
-            byte[] command = Utils.decodeBitmap(bmp);
-            outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
-            write(command);
-        } else {
-            Log.e("Print Photo error", "Failed to decode image from URL");
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-        Log.e("PrintTools", "Error while printing photo from URL");
-    }
   }
 }
