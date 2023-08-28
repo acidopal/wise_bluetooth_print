@@ -177,4 +177,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       Log.e("PrintTools", "Error while printing photo from URL");
     }
   }
+
+  @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    if (handler != null && timeoutRunnable != null) {
+      // Remove the timeout runnable callback if it is still pending
+      handler.removeCallbacks(timeoutRunnable);
+    }
+    channel.setMethodCallHandler(null);
+  }
 }
