@@ -30,6 +30,8 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import android.os.StrictMode;
 
+import android.util.Base64;
+
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private OutputStream outputStream;
@@ -101,7 +103,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printPhotoFromUrl(imageUrl);
+              printPhoto(imageUrl);
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -146,6 +148,20 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     outputStream.write(data);
     // Set printSuccess flag to true after successful write
     printSuccess = true;
+  }
+
+  public void printPhoto(String imageUrl) {
+    try {
+      if (imageUrl != null) {
+        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+        write(imageData);
+      } else {
+        Log.e("Print Photo error", "Failed to decode image from URL");
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Log.e("PrintTools", "Error while printing photo from URL");
+    }
   }
 
   public void printPhotoFromUrl(String imageUrl) {
