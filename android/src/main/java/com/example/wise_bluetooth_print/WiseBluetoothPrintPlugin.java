@@ -151,6 +151,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   public void printPhotoFromUrl(String imageUrl) {
     try {
+      
+      if (android.os.Build.VERSION.SDK_INT > 9) {
+          StrictMode.ThreadPolicy policy = 
+              new StrictMode.ThreadPolicy.Builder().permitAll().build();
+          StrictMode.setThreadPolicy(policy);
+      }
+
       URL url = new URL(imageUrl);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setDoInput(true);
