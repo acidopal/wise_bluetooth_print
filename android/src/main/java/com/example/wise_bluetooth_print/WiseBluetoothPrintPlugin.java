@@ -65,18 +65,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               device.fetchUuidsWithSdp();
               ParcelUuid[] uuids = device.getUuids();
               UUID socket = uuids[0].getUuid();
-
-              Log("===============================================");
-              Log.e("Info Device", device.getName());
-              Log.e("Device getName", device.getName());
-              Log.e("Device getAddress", device.getAddress());
-              Log.e("Device getAddress", device.getAddress());
-              Log.e("Device getInputStream", device.getInputStream());
-              Log.e("Device getOutputStream", device.getOutputStream());
-              Log.e("Device getPairedDevices", device.getPairedDevices());
-              Log.e("Device getUuids", device.getUuids());
-              Log("===============================================");
-
               deviceInfoList.add(deviceName);
               deviceInfoList.add(deviceHardwareAddress);
               deviceInfoList.add(socket.toString());
@@ -125,11 +113,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                     socket.close();
                   } catch (IOException e) {
                     tempText = "1";
-                      Log("===============================================");
-                      Log("                   Failed                      ");
-                      Log("===============================================");
-                      Log.e("#ErrorPrinter1", e.getMessage());
-                      Log("===============================================");
                   } finally {
                     result.success(printSuccess);
                   }
@@ -142,27 +125,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             } catch (IOException e) {
               tempText = "1";
               result.success(false);
-              Log("===============================================");
-              Log("                   Failed                      ");
-              Log("===============================================");
-              Log.e("#ErrorPrinter2", e.getMessage());
-              Log("===============================================");
             }
           } else {
             tempText = "1";
             result.success(false);
-            Log("===============================================");
-            Log("                   Failed                      ");
-            Log("===============================================");
-            Log.e("#ErrorPrinter3", e.getMessage());
-            Log("===============================================");
           }
         }
       }
     } else {
-      Log("===============================================");
-      Log("               notImplemented                  ");
-      Log("===============================================");
       result.notImplemented();
     }
   }
