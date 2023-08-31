@@ -163,8 +163,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
       Log("===============================================");
       Log("               notImplemented                  ");
       Log("===============================================");
-      Log.e("#notImplemented", 'notImplemented');
-      Log("===============================================");
       result.notImplemented();
     }
   }
