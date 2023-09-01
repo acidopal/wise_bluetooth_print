@@ -35,7 +35,6 @@ import android.util.Base64;
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private OutputStream outputStream;
-  private InputStream inStream;
   private String tempText = "0";
   private Handler handler;
   private Runnable timeoutRunnable;
@@ -98,36 +97,37 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
             try {
-              BluetoothSocket socket = isConnected(pairedDevice, UUID.fromString(uuid));
-              if(socket != null && socket.isConnected()) {
+              // BluetoothSocket socket = isConnected(pairedDevice, uuids);
+              // if(socket != null && socket.isConnected()) {
+                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
                 socket.connect();
                 outputStream = socket.getOutputStream();
-                inStream = socket.getInputStream();
 
                 printPhoto(imageUrl);
                 write(printStr);
 
-                // Set timeout runnable to handle timeout case
-                  timeoutRunnable = new Runnable() {
+                final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                      try {
+                      try 
+                      {
                         socket.close();
-                      } catch (IOException e) {
+                      } 
+                      catch (IOException e) { 
                         tempText = "1";
-                      } finally {
-                        result.success(printSuccess);
+                        result.success(false);
                       }
                     }
-                  };
-
-                  // Schedule the timeout runnable
-                  handler = new Handler();
-                  handler.postDelayed(timeoutRunnable, timeout);
-              }else{
-                tempText = "1";
-                result.success(false);
-             }
+                  }, timeout);
+                } catch (IOException e){
+                  tempText = "1";
+                  result.success(false);
+                }
+            //   }else{
+            //     tempText = "1";
+            //     result.success(false);
+            //  }
             } catch (IOException e) {
               Log.e("notConnected", e.getMessage());
               tempText = "1";
