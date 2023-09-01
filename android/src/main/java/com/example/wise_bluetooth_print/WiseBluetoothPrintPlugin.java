@@ -124,7 +124,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                   Schedule the timeout runnable
                   handler = new Handler();
                   handler.postDelayed(timeoutRunnable, timeout);
-                  result.success(printSuccess);      
               }else{
                 tempText = "1";
                 result.success(false);
