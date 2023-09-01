@@ -98,9 +98,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             bluetooth.cancelDiscovery();
 
             try {
-              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-              while(isConnected(socket, UUID.fromString(uuid))){
+              while(isConnected(pairedDevice, UUID.fromString(uuid))){
                 try {
+                  final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
                   socket.connect();
                   outputStream = socket.getOutputStream();
                   inStream = socket.getInputStream();
