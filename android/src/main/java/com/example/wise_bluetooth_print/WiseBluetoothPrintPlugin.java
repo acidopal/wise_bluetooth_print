@@ -69,7 +69,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               deviceInfoList.add(deviceHardwareAddress);
               deviceInfoList.add(socket.toString());
 
-              Log.i("PairedDevice", String.format(Locale.US, "Device: %s connected: %b", device.getName(), isConnected(device, socket.toString())));
+              Log.i("PairedDevice", String.format("Device: %s connected: %b", device.getName(), isConnected(device, socket)));
             }
           }
         }
@@ -99,7 +99,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
             try {
               final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-              while(socket.isConnected(socket, uuid)){
+              while(isConnected(socket, UUID.fromString(uuid))){
                 try {
                   socket.connect();
                   outputStream = socket.getOutputStream();
@@ -130,12 +130,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
   }
 
-  private boolean isConnected(BluetoothDevice device, String uuid) {
+  private boolean isConnected(BluetoothDevice device, UUID uuid) {
     BluetoothSocket socket = null;
 
-    UUID SPP_UUID = UUID.fromString(UUID.fromString(uuid));
     try {
-        socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+        socket = device.createRfcommSocketToServiceRecord(uuid);
     } catch (IOException e) {
         Log.e("isConnected", e.getMessage());
         return false;
