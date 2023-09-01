@@ -108,7 +108,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
                 result.success(printSuccess);
              }else{
-                Log.e("notPrinted", e.getMessage());
                 tempText = "1";
                 result.success(false);
              }
