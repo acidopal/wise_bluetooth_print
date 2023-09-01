@@ -97,7 +97,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
             try {
-              if(isConnected(pairedDevice, UUID.fromString(uuid))){
+              boolean isConnected = isConnected(pairedDevice, UUID.fromString(uuid));
+              if(isConnected){
                 final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
                 socket.connect();
                 outputStream = socket.getOutputStream();
@@ -106,8 +107,25 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 printPhoto(imageUrl);
                 write(printStr);
 
-                result.success(printSuccess);
-             }else{
+                // Set timeout runnable to handle timeout case
+                  timeoutRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                      try {
+                        socket.close();
+                      } catch (IOException e) {
+                        tempText = "1";
+                      } finally {
+                        result.success(printSuccess);
+                      }
+                    }
+                  };
+
+                  Schedule the timeout runnable
+                  handler = new Handler();
+                  handler.postDelayed(timeoutRunnable, timeout);
+                  result.success(printSuccess);      
+              }else{
                 tempText = "1";
                 result.success(false);
              }
