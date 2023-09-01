@@ -98,7 +98,10 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 socket.connect();
                 outputStream = socket.getOutputStream();
 
-                printPhoto(imageUrl);
+                if(imageUrl != null){
+                  printPhoto(imageUrl);
+                }
+
                 write(printStr);
 
                 final Handler handler = new Handler();
