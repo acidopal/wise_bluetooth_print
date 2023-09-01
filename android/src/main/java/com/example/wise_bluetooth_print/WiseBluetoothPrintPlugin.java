@@ -103,7 +103,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               outputStream = socket.getOutputStream();
               inStream = socket.getInputStream();
 
-              printPhoto(imageUrl);
               write(printStr);
 
               // Set timeout runnable to handle timeout case
@@ -168,35 +167,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     } catch (Exception e) {
       e.printStackTrace();
       Log.e("PrintTools", "Error while printing photo");
-    }
-  }
-
-  public void printPhotoFromUrl(String imageUrl) {
-    try {
-
-      if (android.os.Build.VERSION.SDK_INT > 9) {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-      }
-
-      URL url = new URL(imageUrl);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setDoInput(true);
-      connection.connect();
-
-      InputStream inputStream = connection.getInputStream();
-      Bitmap bmp = BitmapFactory.decodeStream(inputStream);
-
-      if (bmp != null) {
-        byte[] command = Utils.decodeBitmap(bmp);
-        outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
-        write(command);
-      } else {
-        Log.e("Print Photo error", "Failed to decode image from URL");
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      Log.e("PrintTools", "Error while printing photo from URL");
     }
   }
 
