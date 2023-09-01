@@ -35,6 +35,7 @@ import android.util.Base64;
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private OutputStream outputStream;
+  private InputStream inStream;
   private String tempText = "0";
   private Handler handler;
   private Runnable timeoutRunnable;
@@ -64,6 +65,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
               device.fetchUuidsWithSdp();
               ParcelUuid[] uuids = device.getUuids();
               UUID socket = uuids[0].getUuid();
+
               deviceInfoList.add(deviceName);
               deviceInfoList.add(deviceHardwareAddress);
               deviceInfoList.add(socket.toString());
@@ -93,33 +95,35 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           UUID s = uuids[0].getUuid();
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
+
             try {
-                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-                socket.connect();
-                outputStream = socket.getOutputStream();
+              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
 
-                if(imageUrl != null){
-                  printPhoto(imageUrl);
+              socket.connect();
+              outputStream = socket.getOutputStream();
+              inStream = socket.getInputStream();
+
+              printPhoto(imageUrl);
+              write(printStr);
+
+              // Set timeout runnable to handle timeout case
+              timeoutRunnable = new Runnable() {
+                @Override
+                public void run() {
+                  try {
+                    socket.close();
+                  } catch (IOException e) {
+                    tempText = "1";
+                  } finally {
+                    result.success(printSuccess);
+                  }
                 }
+              };
 
-                write(printStr);
-
-                final Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                      try 
-                      {
-                        socket.close();
-                      } 
-                      catch (IOException e) { 
-                        tempText = "1";
-                        result.success(false);
-                      }
-                    }
-                  }, timeout);
+              // Schedule the timeout runnable
+              handler = new Handler();
+              handler.postDelayed(timeoutRunnable, timeout);
             } catch (IOException e) {
-              Log.e("notConnected", e.getMessage());
               tempText = "1";
               result.success(false);
             }
@@ -135,6 +139,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   }
 
   public void write(String s) throws IOException {
+    outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
     outputStream.write(s.getBytes());
     // Set printSuccess flag to true after successful write
     printSuccess = true;
