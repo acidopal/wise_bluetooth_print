@@ -42,25 +42,30 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
   private Runnable timeoutRunnable;
   private boolean printSuccess = false;
 
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
-    channel.setMethodCallHandler(this);
-  }
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
+        channel.setMethodCallHandler(this);
+    }
 
-  @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-      String method = call.method;
 
-      if ("getPlatformVersion".equals(method)) {
-          result.success("Android " + android.os.Build.VERSION.RELEASE);
-      } else if ("getPairedDevices".equals(method)) {
-          result.success(getPairedDeviceList());
-      } else if ("print".equals(method)) {
-          printDocument(call, result);
-      } else {
-          result.notImplemented();
-      }
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        String method = call.method;
+
+        switch (method) {
+            case "getPlatformVersion":
+                result.success("Android " + Build.VERSION.RELEASE);
+                break;
+            case "getPairedDevices":
+                result.success(getPairedDeviceList());
+                break;
+            case "print":
+                printDocument(call, result);
+                break;
+            default:
+                result.notImplemented();
+        }
     }
 
     private ArrayList<String> getPairedDeviceList() {
@@ -70,20 +75,24 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         if (bluetooth != null && bluetooth.isEnabled()) {
             Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
             for (BluetoothDevice device : pairedDevices) {
-                device.fetchUuidsWithSdp();
-                ParcelUuid[] uuids = device.getUuids();
-                UUID socketUUID = uuids[0].getUuid();
-
-                deviceInfoList.add(device.getName());
-                deviceInfoList.add(device.getAddress());
-                deviceInfoList.add(socketUUID.toString());
+                addDeviceInfoToList(deviceInfoList, device);
             }
         }
 
         return deviceInfoList;
     }
 
-    private void printDocument(@NonNull MethodCall call, @NonNull Result result) {
+    private void addDeviceInfoToList(ArrayList<String> deviceInfoList, BluetoothDevice device) {
+        device.fetchUuidsWithSdp();
+        ParcelUuid[] uuids = device.getUuids();
+        UUID socketUUID = uuids[0].getUuid();
+
+        deviceInfoList.add(device.getName());
+        deviceInfoList.add(device.getAddress());
+        deviceInfoList.add(socketUUID.toString());
+    }
+
+        private void printDocument(@NonNull MethodCall call, @NonNull Result result) {
         String uuid = call.argument("deviceUUID");
         int timeout = call.argument("timeout");
         int printIndex = call.argument("printIndex");
@@ -94,8 +103,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             return;
         }
 
-        Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-        List<BluetoothDevice> pairedDevicesList = new ArrayList<>(pairedDevices);
+        List<BluetoothDevice> pairedDevicesList = new ArrayList<>(bluetooth.getBondedDevices());
         if (printIndex < 0 || printIndex >= pairedDevicesList.size()) {
             result.success(false);
             return;
@@ -108,17 +116,17 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             return;
         }
 
-        try {
-            BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+        boolean success = printUsingBluetoothSocket(pairedDevice, uuid, call);
+        result.success(success);
+    }
+
+    private boolean printUsingBluetoothSocket(BluetoothDevice device, String uuid, MethodCall call) {
+        try (BluetoothSocket socket = device.createRfcommSocketToServiceRecord(UUID.fromString(uuid))) {
             socket.connect();
-
-            boolean success = printContent(socket, call);
-            socket.close();
-
-            result.success(success);
+            return printContent(socket, call);
         } catch (IOException e) {
             e.printStackTrace();
-            result.success(false);
+            return false;
         }
     }
 
