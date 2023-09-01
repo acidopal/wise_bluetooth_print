@@ -98,8 +98,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             bluetooth.cancelDiscovery();
             try {
                 final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+                socket.connect();
+                
                 if(socket.isConnected()){
-                      socket.connect();
                       outputStream = socket.getOutputStream();
 
                       printPhoto(imageUrl);
