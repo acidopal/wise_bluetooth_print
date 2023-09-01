@@ -151,7 +151,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         socket = device.createRfcommSocketToServiceRecord(uuid);
     } catch (IOException e) {
         Log.e("isConnected", e.getMessage());
-        return false;
+        return null;
     }
 
     Log.i("SocketisConnected", socket.toString());
