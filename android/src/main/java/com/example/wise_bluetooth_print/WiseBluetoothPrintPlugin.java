@@ -97,29 +97,29 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
             try {
-              final BluetoothSocket socket = isConnected(pairedDevice, UUID.fromString(uuid));
-              if(socket != null && socket.isConnected()) {
-                socket.connect();
-                outputStream = socket.getOutputStream();
+                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+                if(socket.isConnected()){
+                      socket.connect();
+                      outputStream = socket.getOutputStream();
 
-                printPhoto(imageUrl);
-                write(printStr);
+                      printPhoto(imageUrl);
+                      write(printStr);
 
-                final Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                      try 
-                      {
-                        socket.close();
-                      } 
-                      catch (IOException e) { 
-                        tempText = "1";
-                        result.success(false);
-                      }
-                    }
-                  }, timeout);
-              }
+                      final Handler handler = new Handler();
+                          handler.postDelayed(new Runnable() {
+                          @Override
+                          public void run() {
+                            try 
+                            {
+                              socket.close();
+                            } 
+                            catch (IOException e) { 
+                              tempText = "1";
+                              result.success(false);
+                            }
+                          }
+                        }, timeout);
+                }
             } catch (IOException e) {
               Log.e("notConnected", e.getMessage());
               tempText = "1";
