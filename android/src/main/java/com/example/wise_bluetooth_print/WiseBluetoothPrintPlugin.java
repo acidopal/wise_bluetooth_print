@@ -97,9 +97,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
           if (s.toString().equals(uuid)) {
             bluetooth.cancelDiscovery();
             try {
-              // BluetoothSocket socket = isConnected(pairedDevice, uuids);
-              // if(socket != null && socket.isConnected()) {
-                final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+              final BluetoothSocket socket = isConnected(pairedDevice, UUID.fromString(uuid));
+              if(socket != null && socket.isConnected()) {
                 socket.connect();
                 outputStream = socket.getOutputStream();
 
@@ -120,10 +119,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                       }
                     }
                   }, timeout);
-            //   }else{
-            //     tempText = "1";
-            //     result.success(false);
-            //  }
+              }
             } catch (IOException e) {
               Log.e("notConnected", e.getMessage());
               tempText = "1";
