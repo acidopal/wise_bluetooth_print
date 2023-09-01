@@ -144,7 +144,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
   }
 
-  private boolean isConnected(BluetoothDevice device, UUID uuid) {
+  private BluetoothSocket isConnected(BluetoothDevice device, UUID uuid) {
     BluetoothSocket socket = null;
 
     try {
