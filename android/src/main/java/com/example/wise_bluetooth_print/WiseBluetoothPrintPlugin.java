@@ -31,6 +31,7 @@ import java.net.HttpURLConnection;
 import android.os.StrictMode;
 
 import android.util.Base64;
+import java.util.List;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
