@@ -55,7 +55,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
         switch (method) {
             case "getPlatformVersion":
-                result.success("Android " + Build.VERSION.RELEASE);
+                result.success("Android " + android.os.Build.VERSION.RELEASE);
                 break;
             case "getPairedDevices":
                 result.success(getPairedDeviceList());
