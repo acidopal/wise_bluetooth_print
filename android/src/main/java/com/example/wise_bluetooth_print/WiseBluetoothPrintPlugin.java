@@ -120,10 +120,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                       }
                     }
                   }, timeout);
-                } catch (IOException e){
-                  tempText = "1";
-                  result.success(false);
-                }
             //   }else{
             //     tempText = "1";
             //     result.success(false);
@@ -157,7 +153,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     Log.i("SocketisConnected", socket.toString());
 
     return socket;
-}
+  }
 
   public void write(String s) throws IOException {
     outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
