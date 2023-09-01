@@ -49,156 +49,136 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Android " + android.os.Build.VERSION.RELEASE);
-    } else if (call.method.equals("getPairedDevices")) {
-      ArrayList<String> deviceInfoList = new ArrayList<String>();
-      BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-      if (bluetooth != null) {
-        if (bluetooth.isEnabled()) {
-          Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+      String method = call.method;
 
-          if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-              String deviceName = device.getName();
-              String deviceHardwareAddress = device.getAddress();
-              device.fetchUuidsWithSdp();
-              ParcelUuid[] uuids = device.getUuids();
-              UUID socket = uuids[0].getUuid();
-
-              deviceInfoList.add(deviceName);
-              deviceInfoList.add(deviceHardwareAddress);
-              deviceInfoList.add(socket.toString());
-            }
-          }
-        }
-      }
-      bluetooth.cancelDiscovery();
-      result.success(deviceInfoList);
-    } else if (call.method.equals("print")) {
-      String imageUrl = call.argument("imageUrl");
-      String printStr = call.argument("printText");
-      String uuid = call.argument("deviceUUID");
-      int timeout = call.argument("timeout");
-      int printIndex = call.argument("printIndex");
-
-      BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-
-      Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-      BluetoothDevice[] pairedDevicesArray = pairedDevices.toArray(new BluetoothDevice[0]);
-      int size = pairedDevicesArray.length;
-
-      for (int i = 0; i < size; i++) {
-        if (printIndex == i) {
-          BluetoothDevice pairedDevice = pairedDevicesArray[i];
-          ParcelUuid[] uuids = pairedDevice.getUuids();
-          UUID s = uuids[0].getUuid();
-          if (s.toString().equals(uuid)) {
-            bluetooth.cancelDiscovery();
-
-            try {
-              final BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-
-              socket.connect();
-              outputStream = socket.getOutputStream();
-              inStream = socket.getInputStream();
-
-              printPhoto(imageUrl);
-              write(printStr);
-
-              // Set timeout runnable to handle timeout case
-              timeoutRunnable = new Runnable() {
-                @Override
-                public void run() {
-                  try {
-                    socket.close();
-                  } catch (IOException e) {
-                    tempText = "1";
-                  } finally {
-                    result.success(printSuccess);
-                  }
-                }
-              };
-
-              // Schedule the timeout runnable
-              handler = new Handler();
-              handler.postDelayed(timeoutRunnable, timeout);
-            } catch (IOException e) {
-              tempText = "1";
-              result.success(false);
-            }
-          } else {
-            tempText = "1";
-            result.success(false);
-          }
-        }
-      }
-    } else {
-      result.notImplemented();
-    }
-  }
-
-  public void write(String s) throws IOException {
-    outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
-    outputStream.write(s.getBytes());
-    // Set printSuccess flag to true after successful write
-    printSuccess = true;
-  }
-
-  public void write(byte[] data) throws IOException {
-    outputStream.write(data);
-    // Set printSuccess flag to true after successful write
-    printSuccess = true;
-  }
-
-  public void printPhoto(String imageUrl) {
-    try {
-      if (imageUrl != null) {
-        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-        Bitmap bmp = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-        if (bmp != null) {
-          byte[] command = Utils.decodeBitmap(bmp);
-          outputStream.write(PrinterCommands.ESC_ALIGN_CENTER);
-          write(command);
-          outputStream.write(PrinterCommands.ESC_ENTER);
-        } else {
-          Log.e("Print Photo error", "Failed to decode image");
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      Log.e("PrintTools", "Error while printing photo");
-    }
-  }
-
-  public void printPhotoFromUrl(String imageUrl) {
-    try {
-
-      if (android.os.Build.VERSION.SDK_INT > 9) {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-      }
-
-      URL url = new URL(imageUrl);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setDoInput(true);
-      connection.connect();
-
-      InputStream inputStream = connection.getInputStream();
-      Bitmap bmp = BitmapFactory.decodeStream(inputStream);
-
-      if (bmp != null) {
-        byte[] command = Utils.decodeBitmap(bmp);
-        outputStream.write(PrinterCommands.ESC_ALIGN_LEFT);
-        write(command);
+      if ("getPlatformVersion".equals(method)) {
+          result.success("Android " + android.os.Build.VERSION.RELEASE);
+      } else if ("getPairedDevices".equals(method)) {
+          result.success(getPairedDeviceList());
+      } else if ("print".equals(method)) {
+          printDocument(call, result);
       } else {
-        Log.e("Print Photo error", "Failed to decode image from URL");
+          result.notImplemented();
       }
-    } catch (Exception e) {
-      e.printStackTrace();
-      Log.e("PrintTools", "Error while printing photo from URL");
     }
-  }
+
+    private ArrayList<String> getPairedDeviceList() {
+        ArrayList<String> deviceInfoList = new ArrayList<>();
+        BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+
+        if (bluetooth != null && bluetooth.isEnabled()) {
+            Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+            for (BluetoothDevice device : pairedDevices) {
+                device.fetchUuidsWithSdp();
+                ParcelUuid[] uuids = device.getUuids();
+                UUID socketUUID = uuids[0].getUuid();
+
+                deviceInfoList.add(device.getName());
+                deviceInfoList.add(device.getAddress());
+                deviceInfoList.add(socketUUID.toString());
+            }
+        }
+
+        return deviceInfoList;
+    }
+
+    private void printDocument(@NonNull MethodCall call, @NonNull Result result) {
+        String uuid = call.argument("deviceUUID");
+        int timeout = call.argument("timeout");
+        int printIndex = call.argument("printIndex");
+
+        BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+        if (bluetooth == null) {
+            result.success(false);
+            return;
+        }
+
+        Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+        List<BluetoothDevice> pairedDevicesList = new ArrayList<>(pairedDevices);
+        if (printIndex < 0 || printIndex >= pairedDevicesList.size()) {
+            result.success(false);
+            return;
+        }
+
+        BluetoothDevice pairedDevice = pairedDevicesList.get(printIndex);
+        ParcelUuid[] uuids = pairedDevice.getUuids();
+        if (uuids.length == 0 || !uuids[0].getUuid().toString().equals(uuid)) {
+            result.success(false);
+            return;
+        }
+
+        try {
+            BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
+            socket.connect();
+
+            boolean success = printContent(socket, call);
+            socket.close();
+
+            result.success(success);
+        } catch (IOException e) {
+            e.printStackTrace();
+            result.success(false);
+        }
+    }
+
+    private boolean printContent(BluetoothSocket socket, @NonNull MethodCall call) {
+        // Set up socket and streams
+        OutputStream outputStream = null;
+        InputStream inStream = null;
+        boolean printSuccess = false;
+
+        try {
+            outputStream = socket.getOutputStream();
+            inStream = socket.getInputStream();
+
+            // Print image if available
+            String imageUrl = call.argument("imageUrl");
+            printImage(outputStream, imageUrl);
+
+            // Print text
+            String printStr = call.argument("printText");
+            write(outputStream, PrinterCommands.ESC_ALIGN_LEFT);
+            write(outputStream, printStr.getBytes());
+            printSuccess = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (outputStream != null) outputStream.close();
+                if (inStream != null) inStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return printSuccess;
+    }
+
+    private void write(OutputStream outputStream, byte[] data) throws IOException {
+        outputStream.write(data);
+    }
+
+    private void printImage(OutputStream outputStream, String imageUrl) throws IOException {
+        if (imageUrl == null) return;
+
+        try {
+            byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+            Bitmap bmp = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+
+            if (bmp != null) {
+                byte[] command = Utils.decodeBitmap(bmp);
+                write(outputStream, PrinterCommands.ESC_ALIGN_CENTER);
+                write(outputStream, command);
+                write(outputStream, PrinterCommands.ESC_ENTER);
+            } else {
+                Log.e("Print Photo error", "Failed to decode image");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("PrintTools", "Error while printing photo");
+        }
+    }
+
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
