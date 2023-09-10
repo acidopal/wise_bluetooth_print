@@ -26,16 +26,21 @@ class WiseBluetoothPrint {
     return devices;
   }
 
-  static Future<bool> print(String deviceUUID, String printText, int index,
-      {Map? options, String? imageUrl}) async {
+  static Future<bool> connectBluePrint(String address) async {
     final Map<String, dynamic> params = <String, dynamic>{
-      'printText': printText,
-      'deviceUUID': deviceUUID,
-      'timeout': options?['timeout'] ?? 100,
-      'printIndex': index,
-      'imageUrl': imageUrl,
+      'address': address,
     };
-    var ret = await _channel.invokeMethod('print', params);
+    var ret = await _channel.invokeMethod('connectBluePrint', params);
+    return ret;
+  }
+
+  static Future<bool> printBluePrint() async {
+    var ret = await _channel.invokeMethod('printBluePrint');
+    return ret;
+  }
+
+  static Future<bool> disconnectBluePrint() async {
+    var ret = await _channel.invokeMethod('disconnectBluePrint');
     return ret;
   }
 }

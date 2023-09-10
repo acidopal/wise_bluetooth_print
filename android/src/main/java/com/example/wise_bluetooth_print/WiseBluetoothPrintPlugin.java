@@ -2,12 +2,23 @@ package com.example.wise_bluetooth_print;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.ParcelUuid;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy;
+import com.bumptech.glide.request.RequestOptions;
+import com.example.wise_bluetooth_print.blueprint.GPDeviceConnFactoryManager;
+import com.example.wise_bluetooth_print.blueprint.GPThreadPool;
+import com.gprinter.command.EscCommand;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.UUID;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
@@ -15,178 +26,143 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.UUID;
-
-import android.app.Activity;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import java.net.URL;
-import java.net.HttpURLConnection;
-import android.os.StrictMode;
-
-import android.util.Base64;
-import java.util.List;
-
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
-  private MethodChannel channel;
-  private OutputStream outputStream;
-  private InputStream inStream;
-  private String tempText = "0";
-  private Handler handler;
-  private Runnable timeoutRunnable;
-  private boolean printSuccess = false;
+    private MethodChannel channel;
+    private Context context;
 
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
-    channel.setMethodCallHandler(this);
-  }
+    private HashMap<String, Integer> blueprintIdAddress = new HashMap<>();
 
-  @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-      String method = call.method;
-
-      if ("getPlatformVersion".equals(method)) {
-          result.success("Android " + android.os.Build.VERSION.RELEASE);
-      } else if ("getPairedDevices".equals(method)) {
-          result.success(getPairedDeviceList());
-      } else if ("print".equals(method)) {
-          printDocument(call, result);
-      } else {
-          result.notImplemented();
-      }
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+        context = flutterPluginBinding.getApplicationContext();
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
+        channel.setMethodCallHandler(this);
     }
 
-    private ArrayList<String> getPairedDeviceList() {
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        switch (call.method) {
+            case "getPlatformVersion":
+                result.success("Android " + android.os.Build.VERSION.RELEASE);
+                break;
+            case "getPairedDevices": {
+                getPairedDevices(result);
+                break;
+            }
+
+            case "connectBluePrint": {
+                String address = call.argument("address");
+                connectBluePrint(address, result);
+                break;
+            }
+            case "printBluePrint": {
+                printBluePrint(result);
+                break;
+            }
+            case "disconnectBluePrint": {
+                disconnectBluePrint(result);
+                break;
+            }
+
+            default:
+                result.notImplemented();
+                break;
+        }
+    }
+
+    private void getPairedDevices(Result result) {
         ArrayList<String> deviceInfoList = new ArrayList<>();
         BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+        if (bluetooth != null) {
+            if (bluetooth.isEnabled()) {
+                Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
 
-        if (bluetooth != null && bluetooth.isEnabled()) {
-            Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-            for (BluetoothDevice device : pairedDevices) {
-                device.fetchUuidsWithSdp();
-                ParcelUuid[] uuids = device.getUuids();
-                UUID socketUUID = uuids[0].getUuid();
+                if (pairedDevices.size() > 0) {
+                    for (BluetoothDevice device : pairedDevices) {
+                        String deviceName = device.getName();
+                        String deviceHardwareAddress = device.getAddress();
+                        device.fetchUuidsWithSdp();
+                        ParcelUuid[] uuids = device.getUuids();
+                        UUID socket = uuids[0].getUuid();
 
-                deviceInfoList.add(device.getName());
-                deviceInfoList.add(device.getAddress());
-                deviceInfoList.add(socketUUID.toString());
+                        deviceInfoList.add(deviceName);
+                        deviceInfoList.add(deviceHardwareAddress);
+                        deviceInfoList.add(socket.toString());
+                    }
+                }
             }
         }
-
-        return deviceInfoList;
+        bluetooth.cancelDiscovery();
+        result.success(deviceInfoList);
     }
 
-    private void printDocument(@NonNull MethodCall call, @NonNull Result result) {
-        String uuid = call.argument("deviceUUID");
-        int timeout = call.argument("timeout");
-        int printIndex = call.argument("printIndex");
+    private void connectBluePrint(String address, @NonNull Result result) {
+        new GPDeviceConnFactoryManager.Build()
+                .setId(0)
+                .setContext(context)
+                .setName("")
+                .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
+                .setMacAddress(address)
+                .build();
 
-        BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-        if (bluetooth == null) {
-            result.success(false);
-            return;
-        }
-
-        Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-        List<BluetoothDevice> pairedDevicesList = new ArrayList<>(pairedDevices);
-        if (printIndex < 0 || printIndex >= pairedDevicesList.size()) {
-            result.success(false);
-            return;
-        }
-
-        BluetoothDevice pairedDevice = pairedDevicesList.get(printIndex);
-        ParcelUuid[] uuids = pairedDevice.getUuids();
-        if (uuids.length == 0 || !uuids[0].getUuid().toString().equals(uuid)) {
-            result.success(false);
-            return;
-        }
-
-        try {
-            BluetoothSocket socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
-            socket.connect();
-
-            boolean success = printContent(socket, call);
-            socket.close();
-
-            result.success(success);
-        } catch (IOException e) {
-            e.printStackTrace();
-            result.success(false);
-        }
-    }
-
-    private boolean printContent(BluetoothSocket socket, @NonNull MethodCall call) {
-        // Set up socket and streams
-        OutputStream outputStream = null;
-        InputStream inStream = null;
-        boolean printSuccess = false;
-
-        try {
-            outputStream = socket.getOutputStream();
-            inStream = socket.getInputStream();
-
-            // Print image if available
-            String imageUrl = call.argument("imageUrl");
-            printImage(outputStream, imageUrl);
-
-            // Print text
-            String printStr = call.argument("printText");
-            write(outputStream, PrinterCommands.ESC_ALIGN_LEFT);
-            write(outputStream, printStr.getBytes());
-            printSuccess = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
+        GPThreadPool threadPool = GPThreadPool.getInstantiation();
+        threadPool.addTask(() -> {
             try {
-                if (outputStream != null) outputStream.close();
-                if (inStream != null) inStream.close();
-            } catch (IOException e) {
+                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
+                result.success(true);
+            } catch (Exception e) {
                 e.printStackTrace();
+                result.success(false);
             }
-        }
-
-        return printSuccess;
+        });
     }
 
-    private void write(OutputStream outputStream, byte[] data) throws IOException {
-        outputStream.write(data);
-    }
+    private void printBluePrint(Result result) {
+        new Thread() {
+            @Override
+            public void run() {
+                EscCommand esc = new EscCommand();
+                esc.addInitializePrinter();
+                esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
+                esc.addText("LEFT TEXT\n");
+                esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                esc.addText("CENTER TEXT\n");
+                esc.addSelectJustification(EscCommand.JUSTIFICATION.RIGHT);
+                esc.addText("RIGHT TEXT\n\n\n");
 
-    private void printImage(OutputStream outputStream, String imageUrl) throws IOException {
-        if (imageUrl == null) return;
+                esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                esc.addText("PRINTING IMAGE\n");
 
-        try {
-            byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-            Bitmap bmp = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                try {
+                    Bitmap bitmap = Glide.with(context)
+                            .asBitmap()
+                            .load(R.drawable.carimage)
+                            .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
+                            .submit(200, 200)
+                            .get();
+                    esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                    esc.addRastBitImage(bitmap, 200, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                }
 
-            if (bmp != null) {
-                byte[] command = Utils.decodeBitmap(bmp);
-                write(outputStream, PrinterCommands.ESC_ALIGN_CENTER);
-                write(outputStream, command);
-                write(outputStream, PrinterCommands.ESC_ENTER);
-            } else {
-                Log.e("Print Photo error", "Failed to decode image");
+                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].sendDataImmediately(esc.getCommand());
+                result.success(true);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e("PrintTools", "Error while printing photo");
-        }
+        }.start();
+
+
+    }
+
+    private void disconnectBluePrint(@NonNull Result result) {
+        GPDeviceConnFactoryManager.closeAllPort();
+        result.success(true);
     }
 
 
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    if (handler != null && timeoutRunnable != null) {
-      // Remove the timeout runnable callback if it is still pending
-      handler.removeCallbacks(timeoutRunnable);
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
     }
-    channel.setMethodCallHandler(null);
-  }
 }
