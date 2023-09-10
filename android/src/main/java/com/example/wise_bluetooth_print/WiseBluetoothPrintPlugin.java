@@ -150,7 +150,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].sendDataImmediately(esc.getCommand());
                 result.success(true);
             }
-        };
+        }.start();
 
 
     }
