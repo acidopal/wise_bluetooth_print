@@ -176,6 +176,17 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  bool isPanda(String hardwareAddress) {
+    return _devices.any((e) => e.hardwareAddress == hardwareAddress)
+        ? (_devices
+                .firstWhere((e) => e.hardwareAddress == hardwareAddress)
+                .name
+                ?.toLowerCase()
+                .contains("mpt") ??
+            false)
+        : false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -197,13 +208,6 @@ class _MyAppState extends State<MyApp> {
                       physics: const BouncingScrollPhysics(),
                       children: [
                         TextButton(
-                          onPressed: () {
-                            // Your action when the button is pressed
-                            WiseBluetoothPrint.printBluePrint();
-                          },
-                          child: const Text("PRINT BLUEPRINT"),
-                        ),
-                        TextButton(
                           onPressed: () async {
                             if (textEditingController.text.isEmpty) {
                               showAlertDialog(context, "Please fill TextField");
@@ -213,14 +217,28 @@ class _MyAppState extends State<MyApp> {
                               });
 
                               for (var i = 0; i < pairedDevice.length; i++) {
-                                await WiseBluetoothPrint.connectPanda(
-                                        pairedDevice[i])
-                                    .then((value) async {
-                                  if (value) {
-                                    await WiseBluetoothPrint.printPanda(
-                                        textEditingController.text);
+                                if (_devices.any((e) =>
+                                    e.hardwareAddress == pairedDevice[i])) {
+                                  if (isPanda(pairedDevice[i])) {
+                                    await WiseBluetoothPrint.connectPanda(
+                                            pairedDevice[i])
+                                        .then((value) async {
+                                      if (value) {
+                                        await WiseBluetoothPrint.printPanda(
+                                            textEditingController.text);
+                                      }
+                                    });
+                                  } else {
+                                    await WiseBluetoothPrint.connectBluePrint(
+                                            pairedDevice[i])
+                                        .then((value) async {
+                                      if (value) {
+                                        await WiseBluetoothPrint.printBluePrint(
+                                            textEditingController.text);
+                                      }
+                                    });
                                   }
-                                });
+                                }
                               }
 
                               setState(() {
@@ -228,7 +246,7 @@ class _MyAppState extends State<MyApp> {
                               });
                             }
                           },
-                          child: const Text("PRINT PANDA"),
+                          child: const Text("PRINT"),
                         ),
                         TextButton(
                           onPressed: () {

@@ -133,14 +133,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         });
     }
 
-    private void printBluePrint(Result result) {
+    private void printBluePrint(String content, Result result) {
         new Thread() {
             @Override
             public void run() {
                 EscCommand esc = new EscCommand();
                 esc.addInitializePrinter();
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
-                esc.addText("LEFT TEXT\n");
+                esc.addText(content + "\n");
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                 esc.addText("CENTER TEXT\n");
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.RIGHT);
