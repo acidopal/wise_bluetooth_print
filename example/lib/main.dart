@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wise_bluetooth_print/classes/paired_device.dart';
 import 'package:wise_bluetooth_print/wise_bluetooth_print.dart';
+import 'package:wise_bluetooth_print_example/device.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,10 +20,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  TextEditingController textEditingController = TextEditingController();
+  TextEditingController foodEditingController = TextEditingController();
+  TextEditingController drinkEditingController = TextEditingController();
+  TextEditingController receiptEditingController = TextEditingController();
 
   late List<PairedDevice> _devices;
-  List<String> pairedDevice = [];
+  List<Devices> pairedDevice = [];
 
   bool isLoading = false;
   bool isPrinting = false;
@@ -98,7 +101,8 @@ class _MyAppState extends State<MyApp> {
 
                                 if (value) {
                                   setState(() {
-                                    pairedDevice.remove(hardwareAddress);
+                                    pairedDevice.remove(Devices(
+                                        hardwareAddress: hardwareAddress));
                                   });
                                 }
 
@@ -129,7 +133,8 @@ class _MyAppState extends State<MyApp> {
 
                                 if (value) {
                                   setState(() {
-                                    pairedDevice.add(hardwareAddress);
+                                    pairedDevice.add(Devices(
+                                        hardwareAddress: hardwareAddress));
                                   });
                                 }
 
@@ -187,6 +192,53 @@ class _MyAppState extends State<MyApp> {
         : false;
   }
 
+  Future<void> readyPrint(String type) async {
+    if (pairedDevice.any((e) =>
+        (type == "food" && (e.food ?? false)) ||
+        (type == "drink" && (e.drink ?? false)) ||
+        (type == "receipt" && (e.receipt ?? false)))) {
+      List<Devices> getList = pairedDevice
+          .where((e) =>
+              (type == "food" && (e.food ?? false)) ||
+              (type == "drink" && (e.drink ?? false)) ||
+              (type == "receipt" && (e.receipt ?? false)))
+          .toList();
+
+      String content = type == "food"
+          ? foodEditingController.text
+          : (type == "drink"
+              ? drinkEditingController.text
+              : receiptEditingController.text);
+
+      for (var i = 0; i < getList.length; i++) {
+        if (_devices
+            .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
+          if (isPanda(getList[i].hardwareAddress ?? "")) {
+            await WiseBluetoothPrint.disconnectPanda().then((result) async {
+              await WiseBluetoothPrint.connectPanda(
+                      getList[i].hardwareAddress ?? "")
+                  .then((value) async {
+                if (value) {
+                  await WiseBluetoothPrint.printPanda(content);
+                }
+              });
+            });
+          } else {
+            await WiseBluetoothPrint.disconnectBluePrint().then((result) async {
+              await WiseBluetoothPrint.connectBluePrint(
+                      getList[i].hardwareAddress ?? "")
+                  .then((value) async {
+                if (value) {
+                  await WiseBluetoothPrint.printBluePrint(content);
+                }
+              });
+            });
+          }
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -209,52 +261,93 @@ class _MyAppState extends State<MyApp> {
                       children: [
                         TextButton(
                           onPressed: () async {
-                            if (textEditingController.text.isEmpty) {
-                              showAlertDialog(context, "Please fill TextField");
+                            if (foodEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.food ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill food TextField");
                             } else {
                               setState(() {
                                 isPrinting = true;
                               });
 
-                              for (var i = 0; i < pairedDevice.length; i++) {
-                                if (_devices.any((e) =>
-                                    e.hardwareAddress == pairedDevice[i])) {
-                                  if (isPanda(pairedDevice[i])) {
-                                    await WiseBluetoothPrint.disconnectPanda()
-                                        .then((result) async {
-                                      await WiseBluetoothPrint.connectPanda(
-                                              pairedDevice[i])
-                                          .then((value) async {
-                                        if (value) {
-                                          await WiseBluetoothPrint.printPanda(
-                                              textEditingController.text);
-                                        }
-                                      });
-                                    });
-                                  } else {
-                                    await WiseBluetoothPrint
-                                            .disconnectBluePrint()
-                                        .then((result) async {
-                                      await WiseBluetoothPrint.connectBluePrint(
-                                              pairedDevice[i])
-                                          .then((value) async {
-                                        if (value) {
-                                          await WiseBluetoothPrint
-                                              .printBluePrint(
-                                                  textEditingController.text);
-                                        }
-                                      });
-                                    });
-                                  }
-                                }
-                              }
+                              await readyPrint("food");
 
                               setState(() {
                                 isPrinting = false;
                               });
                             }
                           },
-                          child: const Text("PRINT"),
+                          child: const Text("PRINT FOOD"),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            if (drinkEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.drink ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill drink TextField");
+                            } else {
+                              setState(() {
+                                isPrinting = true;
+                              });
+
+                              await readyPrint("drink");
+
+                              setState(() {
+                                isPrinting = false;
+                              });
+                            }
+                          },
+                          child: const Text("PRINT DRINK"),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            if (receiptEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.receipt ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill receipt TextField");
+                            } else {
+                              setState(() {
+                                isPrinting = true;
+                              });
+
+                              await readyPrint("receipt");
+
+                              setState(() {
+                                isPrinting = false;
+                              });
+                            }
+                          },
+                          child: const Text("PRINT RECEIPT"),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            if (foodEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.food ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill food TextField");
+                            } else if (drinkEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.drink ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill drink TextField");
+                            } else if (receiptEditingController.text.isEmpty &&
+                                pairedDevice.any((e) => e.receipt ?? false)) {
+                              showAlertDialog(
+                                  context, "Please fill receipt TextField");
+                            } else {
+                              setState(() {
+                                isPrinting = true;
+                              });
+
+                              await readyPrint("food");
+                              await readyPrint("drink");
+                              await readyPrint("receipt");
+
+                              setState(() {
+                                isPrinting = false;
+                              });
+                            }
+                          },
+                          child: const Text("PRINT ALL"),
                         ),
                         TextButton(
                           onPressed: () {
@@ -268,8 +361,22 @@ class _MyAppState extends State<MyApp> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CupertinoTextField(
-                      controller: textEditingController,
-                      placeholder: "Fill content",
+                      controller: foodEditingController,
+                      placeholder: "Fill food content",
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CupertinoTextField(
+                      controller: drinkEditingController,
+                      placeholder: "Fill drink content",
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CupertinoTextField(
+                      controller: receiptEditingController,
+                      placeholder: "Fill receipt content",
                     ),
                   ),
                   Expanded(
@@ -289,7 +396,8 @@ class _MyAppState extends State<MyApp> {
                                         .contains("mpt") ??
                                     false,
                                 pairedDevice.any((e) =>
-                                    e == _devices[index].hardwareAddress));
+                                    e.hardwareAddress ==
+                                    _devices[index].hardwareAddress));
                           },
                           child: Card(
                             elevation: 1,
@@ -308,10 +416,85 @@ class _MyAppState extends State<MyApp> {
                                         Text(_devices[index].hardwareAddress ??
                                             "")
                                       ]),
-                                  subtitle:
-                                      Text(_devices[index].socketId ?? ""),
+                                  subtitle: pairedDevice.any((e) =>
+                                          e.hardwareAddress ==
+                                          _devices[index].hardwareAddress)
+                                      ? Builder(builder: (context) {
+                                          int getIndex =
+                                              pairedDevice.indexWhere((e) =>
+                                                  e.hardwareAddress ==
+                                                  _devices[index]
+                                                      .hardwareAddress);
+
+                                          return Row(
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 10),
+                                                child: Row(
+                                                  children: [
+                                                    CupertinoCheckbox(
+                                                      value:
+                                                          pairedDevice[getIndex]
+                                                              .food,
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          pairedDevice[getIndex]
+                                                              .food = value;
+                                                        });
+                                                      },
+                                                    ),
+                                                    const Text("Food"),
+                                                  ],
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 10),
+                                                child: Row(
+                                                  children: [
+                                                    CupertinoCheckbox(
+                                                      value:
+                                                          pairedDevice[getIndex]
+                                                              .drink,
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          pairedDevice[getIndex]
+                                                              .drink = value;
+                                                        });
+                                                      },
+                                                    ),
+                                                    const Text("Drink"),
+                                                  ],
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 10),
+                                                child: Row(
+                                                  children: [
+                                                    CupertinoCheckbox(
+                                                      value:
+                                                          pairedDevice[getIndex]
+                                                              .receipt,
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          pairedDevice[getIndex]
+                                                              .receipt = value;
+                                                        });
+                                                      },
+                                                    ),
+                                                    const Text("Receipt"),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        })
+                                      : null,
                                   leading: pairedDevice.any((e) =>
-                                          e == _devices[index].hardwareAddress)
+                                          e.hardwareAddress ==
+                                          _devices[index].hardwareAddress)
                                       ? const Icon(
                                           Icons.check_circle_outline_outlined)
                                       : null,
