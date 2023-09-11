@@ -27,7 +27,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 
@@ -210,29 +209,31 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                         printerlibs_caysnpos.PosAlignment_HCenter);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "PRINTING IMAGE\n");
 
-                try {
-                    byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-                    if (bitmap != null) {
-                        int width = bitmap.getWidth();
-                        int height = bitmap.getHeight();
-                        int page_width = 384;
-                        int dstw = width;
-                        int dsth = height;
-                        if (dstw > page_width) {
-                            dstw = page_width;
-                            dsth = (int) (dstw * ((double) height / width));
+                if (imageUrl != null) {
+                    try {
+                        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                        if (bitmap != null) {
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            int page_width = 384;
+                            int dstw = width;
+                            int dsth = height;
+                            if (dstw > page_width) {
+                                dstw = page_width;
+                                dsth = (int) (dstw * ((double) height / width));
+                            }
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                    printerlibs_caysnpos.PosAlignment_HCenter);
+                            printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
+                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n\n\n\n");
                         }
-                        printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
-                                printerlibs_caysnpos.PosAlignment_HCenter);
-                        printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
-                                .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
-                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n\n\n\n");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
+                                "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
-                            "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
                 }
 
                 result.success(true);
