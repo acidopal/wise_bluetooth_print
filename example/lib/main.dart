@@ -25,6 +25,7 @@ class _MyAppState extends State<MyApp> {
   List<String> pairedDevice = [];
 
   bool isLoading = false;
+  bool isPrinting = false;
 
   @override
   void initState() {
@@ -207,7 +208,10 @@ class _MyAppState extends State<MyApp> {
                             if (textEditingController.text.isEmpty) {
                               showAlertDialog(context, "Please fill TextField");
                             } else {
-                              // Your action when the button is pressed
+                              setState(() {
+                                isPrinting = true;
+                              });
+
                               for (var i = 0; i < pairedDevice.length; i++) {
                                 await WiseBluetoothPrint.disconnectPanda()
                                     .then((result) async {
@@ -221,6 +225,10 @@ class _MyAppState extends State<MyApp> {
                                   });
                                 });
                               }
+
+                              setState(() {
+                                isPrinting = false;
+                              });
                             }
                           },
                           child: const Text("PRINT PANDA"),
@@ -292,12 +300,10 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
           ),
-          /*
-          if (isLoading)
+          if (isPrinting)
             Container(
                 color: Colors.black.withOpacity(0.12),
                 child: const Center(child: CircularProgressIndicator())),
-          */
         ],
       ),
     );
