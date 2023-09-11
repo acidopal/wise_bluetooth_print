@@ -63,6 +63,13 @@ class _MyAppState extends State<MyApp> {
             child: const Text("Blueprint"),
           ),
           TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await WiseBluetoothPrint.connectPanda(hardwareAddress);
+            },
+            child: const Text("Panda"),
+          ),
+          TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text("Close", style: TextStyle(color: Colors.red)),
           ),
@@ -97,7 +104,21 @@ class _MyAppState extends State<MyApp> {
                       WiseBluetoothPrint.disconnectBluePrint();
                     },
                     child: const Text("DISCONNECT BLUEPRINT"),
-                  )
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Your action when the button is pressed
+                      WiseBluetoothPrint.printPanda();
+                    },
+                    child: const Text("PRINT PANDA"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Your action when the button is pressed
+                      WiseBluetoothPrint.disconnectPanda();
+                    },
+                    child: const Text("DISCONNECT PANDA"),
+                  ),
                 ],
               ),
               ListView.builder(

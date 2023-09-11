@@ -43,4 +43,22 @@ class WiseBluetoothPrint {
     var ret = await _channel.invokeMethod('disconnectBluePrint');
     return ret;
   }
+
+  static Future<bool> connectPanda(String address) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'address': address,
+    };
+    var ret = await _channel.invokeMethod('connectPanda', params);
+    return Future.value(true);
+  }
+
+  static Future<bool> printPanda() async {
+    var ret = await _channel.invokeMethod('printPanda');
+    return ret;
+  }
+
+  static Future<bool> disconnectPanda() async {
+    var ret = await _channel.invokeMethod('disconnectPanda');
+    return ret;
+  }
 }
