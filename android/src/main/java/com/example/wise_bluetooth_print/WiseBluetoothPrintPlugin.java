@@ -173,33 +173,15 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         result.success(true);
     }
 
-   private void connectPanda(String address, Result result) {
-    try {
-            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            // Do your printing or other operations with the pandaPointer here.
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Handle the exception, possibly notify the user or log an error.
-        } finally {
-            // Close the pandaPointer here, if necessary.
-            if (pandaPointer != null) {
-                // Close the resource, replace 'closePandaPointer' with the actual close method.
-                closePandaPointer(pandaPointer);
-            }
-        }
-    }
-
-    private void closePandaPointer(Pointer pandaPointer) {
+    private void connectPanda(String address, Result result) {
         try {
-            // Release any resources associated with the pandaPointer.
-            // For example, you may have a method like 'CaysnPos_Close(pandaPointer)'.
-            printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            //result.success(true);
         } catch (Exception e) {
             e.printStackTrace();
-            // Handle any exceptions that may occur during the closing process.
+            //result.success(false);
         }
     }
-
 
     private void printPanda(Result result) {
         new Thread() {
