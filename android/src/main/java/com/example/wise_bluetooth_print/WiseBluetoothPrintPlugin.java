@@ -114,27 +114,26 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void connectBluePrint(String address, @NonNull Result result) {
-        try {
-            // Create a new instance of GPDeviceConnFactoryManager
-            GPDeviceConnFactoryManager manager = new GPDeviceConnFactoryManager.Build()
-                    .setId(0)
-                    .setContext(context)
-                    .setName("")
-                    .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
-                    .setMacAddress(address)
-                    .build();
+        System.out.println("Address");
+        System.out.println(address);
+        new GPDeviceConnFactoryManager.Build()
+                .setId(0)
+                .setContext(context)
+                .setName("")
+                .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
+                .setMacAddress(address)
+                .build();
 
-            // Open the Bluetooth port
-            manager.openPort();
-
-            // Signal success to the caller
-            result.success(true);
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            // Signal failure to the caller
-            result.success(false);
-        }
+        GPThreadPool threadPool = GPThreadPool.getInstantiation();
+        threadPool.addTask(() -> {
+            try {
+                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
+                result.success(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.success(false);
+            }
+        });
     }
 
     private void printBluePrint(String content, Result result) {
@@ -210,7 +209,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 try {
                     Bitmap bitmap = Glide.with(context)
                             .asBitmap()
-                            .load(R.drawable.carimage)
+                            .load("https://e7.pngegg.com/pngimages/646/324/png-clipart-github-computer-icons-github-logo-monochrome.png")
                             .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
                             .submit(200, 200)
                             .get();
