@@ -46,8 +46,6 @@ class _MyAppState extends State<MyApp> {
   void initPrint(BuildContext context, String hardwareAddress) {
     // You can add more language options other than ZPL and BZPL/ZPL II for printers
     // that don't support them.
-
-
     showDialog(
       context: context,
       builder: (builder) => AlertDialog(
@@ -78,81 +76,89 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  @override
+  @override  
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
+  return MaterialApp(
+    home: Scaffold(
       appBar: AppBar(
         title: const Text("Wise Bluetooth Print Plugin example"),
       ),
       body: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-          child: Column(
-            children: [
-              Row(
-                children: [
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () {
+                    // Your action when the button is pressed
+                    WiseBluetoothPrint.printBluePrint();
+                  },
+                  child: const Text("PRINT BLUEPRINT"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Your action when the button is pressed
+                    WiseBluetoothPrint.disconnectBluePrint();
+                  },
+                  child: const Text("DISCONNECT BLUEPRINT"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Your action when the button is pressed
+                    WiseBluetoothPrint.printPanda();
+                  },
+                  child: const Text("PRINT PANDA"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Your action when the button is pressed
+                    WiseBluetoothPrint.disconnectPanda();
+                  },
+                  child: const Text("DISCONNECT PANDA"),
+                ),
                   TextButton(
-                    onPressed: () {
-                      // Your action when the button is pressed
-                      WiseBluetoothPrint.printBluePrint();
-                    },
-                    child: const Text("PRINT BLUEPRINT"),
+                  onPressed: () {
+                    // Your action when the button is pressed
+                    WiseBluetoothPrint.getPairedDevices();
+                  },
+                  child: const Text("Paired Device"),
+                ),
+              ],
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: _devices.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () =>
+                      initPrint(context, _devices[index].hardwareAddress ?? ""),
+                  child: Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListTile(
+                            title: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(_devices[index].name ?? ""),
+                                  Text(_devices[index].hardwareAddress ?? "")
+                                ]),
+                            subtitle: Text(_devices[index].socketId ?? ""))
+                      ],
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      // Your action when the button is pressed
-                      WiseBluetoothPrint.disconnectBluePrint();
-                    },
-                    child: const Text("DISCONNECT BLUEPRINT"),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Your action when the button is pressed
-                      WiseBluetoothPrint.printPanda();
-                    },
-                    child: const Text("PRINT PANDA"),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Your action when the button is pressed
-                      WiseBluetoothPrint.disconnectPanda();
-                    },
-                    child: const Text("DISCONNECT PANDA"),
-                  ),
-                ],
-              ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () =>
-                          initPrint(context, _devices[index].hardwareAddress ?? ""),
-                      child: Card(
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ListTile(
-                                title: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(_devices[index].name ?? ""),
-                                      Text(
-                                          _devices[index].hardwareAddress ?? "")
-                                    ]),
-                                subtitle: Text(_devices[index].socketId ?? ""))
-                          ],
-                        ),
-                      ),
-                    );
-                  })
-            ],
-          )),
-    ));
-  }
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }
