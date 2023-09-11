@@ -158,6 +158,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                             .get();
                     esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                     esc.addRastBitImage(bitmap, 200, 0);
+                    esc.addText("\n\n\n\n");
                 } catch (Exception e) {
                     e.printStackTrace();
                     esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
@@ -223,6 +224,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                                 printerlibs_caysnpos.PosAlignment_HCenter);
                         printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
                                 .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n\n\n\n");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
