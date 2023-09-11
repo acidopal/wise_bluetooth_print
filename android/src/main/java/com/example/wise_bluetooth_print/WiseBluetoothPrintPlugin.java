@@ -176,10 +176,10 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     private void connectPanda(String address, Result result) {
         try {
             pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            //result.success(true);
+            result.success(true);
         } catch (Exception e) {
             e.printStackTrace();
-            //result.success(false);
+            result.success(false);
         }
     }
 
@@ -187,14 +187,18 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         new Thread() {
             @Override
             public void run() {
-                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer, printerlibs_caysnpos.PosAlignment_Left);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_Left);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "LEFT_TEXT\n");
-                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer, printerlibs_caysnpos.PosAlignment_HCenter);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_HCenter);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "CENTER_TEXT\n");
-                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer, printerlibs_caysnpos.PosAlignment_Right);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_Right);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "RIGHT_TEXT\n");
 
-                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer, printerlibs_caysnpos.PosAlignment_HCenter);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_HCenter);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "PRINTING IMAGE\n");
 
                 try {
@@ -212,14 +216,17 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                         int dsth = height;
                         if (dstw > page_width) {
                             dstw = page_width;
-                            dsth = (int)(dstw * ((double)height / width));
+                            dsth = (int) (dstw * ((double) height / width));
                         }
-                        printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer, printerlibs_caysnpos.PosAlignment_HCenter);
-                        printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper.CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                printerlibs_caysnpos.PosAlignment_HCenter);
+                        printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
+                                .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                    printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
+                            "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
                 }
 
                 result.success(true);
