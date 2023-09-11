@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -18,6 +19,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  TextEditingController textEditingController = TextEditingController();
+
   late List<PairedDevice> _devices;
   List<String> pairedDevice = [];
 
@@ -152,6 +155,26 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  Future<void> showAlertDialog(BuildContext context, String content) async {
+    await showDialog(
+      context: context,
+      builder: (builder) => StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Information"),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Close", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      }),
+    ).whenComplete(() {
+      setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -181,8 +204,13 @@ class _MyAppState extends State<MyApp> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // Your action when the button is pressed
-                            WiseBluetoothPrint.printPanda();
+                            if (textEditingController.text.isEmpty) {
+                              showAlertDialog(context, "Please fill TextField");
+                            } else {
+                              // Your action when the button is pressed
+                              WiseBluetoothPrint.printPanda(
+                                  textEditingController.text);
+                            }
                           },
                           child: const Text("PRINT PANDA"),
                         ),
@@ -193,6 +221,13 @@ class _MyAppState extends State<MyApp> {
                           child: const Text("Paired Device"),
                         ),
                       ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CupertinoTextField(
+                      controller: textEditingController,
+                      placeholder: "Fill content",
                     ),
                   ),
                   ListView.builder(

@@ -71,7 +71,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "printPanda": {
-                printPanda(result);
+                String content = call.argument("content");
+                printPanda(content, result);
                 break;
             }
             case "disconnectPanda": {
@@ -183,13 +184,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }
     }
 
-    private void printPanda(Result result) {
+    private void printPanda(String content, Result result) {
         new Thread() {
             @Override
             public void run() {
                 printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
                         printerlibs_caysnpos.PosAlignment_Left);
-                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "LEFT_TEXT\n");
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n");
                 printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
                         printerlibs_caysnpos.PosAlignment_HCenter);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "CENTER_TEXT\n");
