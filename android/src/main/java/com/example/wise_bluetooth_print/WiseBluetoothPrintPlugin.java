@@ -58,7 +58,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "printBluePrint": {
-                printBluePrint(result);
+                String content = call.argument("content");
+                printBluePrint(content, result);
                 break;
             }
             case "disconnectBluePrint": {

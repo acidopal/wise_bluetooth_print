@@ -264,52 +264,56 @@ class _MyAppState extends State<MyApp> {
                       placeholder: "Fill content",
                     ),
                   ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _devices.length,
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          detailPrint(
-                              context,
-                              _devices[index].hardwareAddress ?? "",
-                              _devices[index]
-                                      .name
-                                      ?.toLowerCase()
-                                      .contains("mpt") ??
-                                  false,
-                              pairedDevice.any(
-                                  (e) => e == _devices[index].hardwareAddress));
-                        },
-                        child: Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _devices.length,
+                      physics: const BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            detailPrint(
+                                context,
+                                _devices[index].hardwareAddress ?? "",
+                                _devices[index]
+                                        .name
+                                        ?.toLowerCase()
+                                        .contains("mpt") ??
+                                    false,
+                                pairedDevice.any((e) =>
+                                    e == _devices[index].hardwareAddress));
+                          },
+                          child: Card(
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ListTile(
+                                  title: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(_devices[index].name ?? ""),
+                                        Text(_devices[index].hardwareAddress ??
+                                            "")
+                                      ]),
+                                  subtitle:
+                                      Text(_devices[index].socketId ?? ""),
+                                  leading: pairedDevice.any((e) =>
+                                          e == _devices[index].hardwareAddress)
+                                      ? const Icon(
+                                          Icons.check_circle_outline_outlined)
+                                      : null,
+                                )
+                              ],
+                            ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ListTile(
-                                title: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(_devices[index].name ?? ""),
-                                      Text(
-                                          _devices[index].hardwareAddress ?? "")
-                                    ]),
-                                subtitle: Text(_devices[index].socketId ?? ""),
-                                leading: pairedDevice.any((e) =>
-                                        e == _devices[index].hardwareAddress)
-                                    ? const Icon(
-                                        Icons.check_circle_outline_outlined)
-                                    : null,
-                              )
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
