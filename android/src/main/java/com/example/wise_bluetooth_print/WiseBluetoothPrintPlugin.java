@@ -73,7 +73,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             }
             case "printPanda": {
                 String content = call.argument("content");
-                printPanda(content, result);
+                String imageUrl = call.argument("imageUrl");
+                printPanda(content, imageUrl, result);
                 break;
             }
             case "disconnectPanda": {
@@ -189,7 +190,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }
     }
 
-    private void printPanda(String content, Result result) {
+    private void printPanda(String content, String imageUrl, Result result) {
         new Thread() {
             @Override
             public void run() {
@@ -208,12 +209,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "PRINTING IMAGE\n");
 
                 try {
-                    Bitmap bitmap = Glide.with(context)
-                            .asBitmap()
-                            .load(R.drawable.carimage)
-                            .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
-                            .submit(200, 200)
-                            .get();
+                    byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
                     if (bitmap != null) {
                         int width = bitmap.getWidth();
                         int height = bitmap.getHeight();

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -7,6 +10,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wise_bluetooth_print/classes/paired_device.dart';
 import 'package:wise_bluetooth_print/wise_bluetooth_print.dart';
 import 'package:wise_bluetooth_print_example/device.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 
 void main() {
   runApp(const MyApp());
@@ -28,6 +33,7 @@ class _MyAppState extends State<MyApp> {
   List<Devices> pairedDevice = [];
 
   bool isPrinting = false;
+  String? image;
 
   @override
   void initState() {
@@ -61,6 +67,26 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _devices = devices;
     });
+  }
+
+  void loadImg() async {
+    String imageUrl =
+        "https://e7.pngegg.com/pngimages/646/324/png-clipart-github-computer-icons-github-logo-monochrome.png";
+
+    final response = await http.get(Uri.parse(imageUrl));
+    if (response.statusCode == 200) {
+      final imageData = response.bodyBytes;
+      final originalImage = img.decodeImage(imageData);
+      if (originalImage != null) {
+        final resizedImage =
+            img.copyResize(originalImage, width: 250, height: 90);
+        final dataImageUri = img.encodeJpg(resizedImage);
+
+        image = base64Encode(dataImageUri);
+      }
+    } else {
+      log('Failed to load image');
+    }
   }
 
   Future<void> detailPrint(BuildContext context, String hardwareAddress,
@@ -272,7 +298,9 @@ class _MyAppState extends State<MyApp> {
                       getList[i].hardwareAddress ?? "")
                   .then((value) async {
                 if (value == "success") {
-                  await WiseBluetoothPrint.printPanda(content);
+                  await WiseBluetoothPrint.printPanda(content,
+                      imageUrl:
+                          (type == "receipt" && image != null) ? image : null);
                 } else {
                   showAlertDialog(context, value.toString());
                 }
