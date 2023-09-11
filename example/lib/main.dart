@@ -235,6 +235,8 @@ class _MyAppState extends State<MyApp> {
         if (_devices
             .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
           try {
+            await Future.delayed(const Duration(seconds: 1));
+
             if (isPanda(getList[i].hardwareAddress ?? "")) {
               await WiseBluetoothPrint.disconnectPanda().then((result) async {
                 await WiseBluetoothPrint.connectPanda(
