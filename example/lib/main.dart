@@ -457,7 +457,8 @@ class _MyAppState extends State<MyApp> {
                                                     CupertinoCheckbox(
                                                       value:
                                                           pairedDevice[getIndex]
-                                                              .drink,
+                                                                  .drink ??
+                                                              false,
                                                       onChanged: (value) {
                                                         setState(() {
                                                           pairedDevice[getIndex]
@@ -477,7 +478,8 @@ class _MyAppState extends State<MyApp> {
                                                     CupertinoCheckbox(
                                                       value:
                                                           pairedDevice[getIndex]
-                                                              .receipt,
+                                                                  .receipt ??
+                                                              false,
                                                       onChanged: (value) {
                                                         setState(() {
                                                           pairedDevice[getIndex]
