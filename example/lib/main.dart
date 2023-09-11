@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:wise_bluetooth_print/classes/paired_device.dart';
 import 'package:wise_bluetooth_print/wise_bluetooth_print.dart';
 
@@ -18,11 +19,24 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late List<PairedDevice> _devices;
+  PairedDevice? pairedDevice;
+
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _devices = <PairedDevice>[];
+    [
+      Permission.bluetooth,
+      Permission.bluetoothConnect,
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothScan,
+      Permission.location,
+      Permission.locationAlways,
+      Permission.locationWhenInUse,
+    ].request();
+
     initPlatformState();
   }
 
@@ -50,20 +64,53 @@ class _MyAppState extends State<MyApp> {
       context: context,
       builder: (builder) => AlertDialog(
         title: const Text("Select printer brand"),
-        content: const Text(
-            "PUNTEEEEENNNNN"),
+        content: const Text("PUNTEEEEENNNNN"),
         actions: [
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await WiseBluetoothPrint.connectBluePrint(hardwareAddress);
+
+              setState(() {
+                isLoading = true;
+              });
+
+              await WiseBluetoothPrint.connectBluePrint(hardwareAddress)
+                  .then((value) {
+                if (value) {
+                  setState(() {
+                    pairedDevice = _devices.firstWhere(
+                        (e) => e.hardwareAddress == hardwareAddress);
+                  });
+                }
+
+                setState(() {
+                  isLoading = false;
+                });
+              });
             },
             child: const Text("Blueprint"),
           ),
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await WiseBluetoothPrint.connectPanda(hardwareAddress);
+
+              setState(() {
+                isLoading = true;
+              });
+
+              await WiseBluetoothPrint.connectPanda(hardwareAddress)
+                  .then((value) {
+                if (value) {
+                  setState(() {
+                    pairedDevice = _devices.firstWhere(
+                        (e) => e.hardwareAddress == hardwareAddress);
+                  });
+                }
+
+                setState(() {
+                  isLoading = false;
+                });
+              });
             },
             child: const Text("Panda"),
           ),
@@ -76,89 +123,109 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  @override  
+  @override
   Widget build(BuildContext context) {
-  return MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        title: const Text("Wise Bluetooth Print Plugin example"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    // Your action when the button is pressed
-                    WiseBluetoothPrint.printBluePrint();
-                  },
-                  child: const Text("PRINT BLUEPRINT"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Your action when the button is pressed
-                    WiseBluetoothPrint.disconnectBluePrint();
-                  },
-                  child: const Text("DISCONNECT BLUEPRINT"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Your action when the button is pressed
-                    WiseBluetoothPrint.printPanda();
-                  },
-                  child: const Text("PRINT PANDA"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Your action when the button is pressed
-                    WiseBluetoothPrint.disconnectPanda();
-                  },
-                  child: const Text("DISCONNECT PANDA"),
-                ),
-                  TextButton(
-                  onPressed: () {
-                    // Your action when the button is pressed
-                    WiseBluetoothPrint.getPairedDevices();
-                  },
-                  child: const Text("Paired Device"),
-                ),
-              ],
+    return MaterialApp(
+      home: Stack(
+        children: [
+          Scaffold(
+            appBar: AppBar(
+              title: const Text("Wise Bluetooth Print Plugin example"),
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: _devices.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () =>
-                      initPrint(context, _devices[index].hardwareAddress ?? ""),
-                  child: Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+            body: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      shrinkWrap: true,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
                       children: [
-                        ListTile(
-                            title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(_devices[index].name ?? ""),
-                                  Text(_devices[index].hardwareAddress ?? "")
-                                ]),
-                            subtitle: Text(_devices[index].socketId ?? ""))
+                        TextButton(
+                          onPressed: () {
+                            // Your action when the button is pressed
+                            WiseBluetoothPrint.printBluePrint();
+                          },
+                          child: const Text("PRINT BLUEPRINT"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Your action when the button is pressed
+                            WiseBluetoothPrint.disconnectBluePrint();
+                          },
+                          child: const Text("DISCONNECT BLUEPRINT"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Your action when the button is pressed
+                            WiseBluetoothPrint.printPanda();
+                          },
+                          child: const Text("PRINT PANDA"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Your action when the button is pressed
+                            WiseBluetoothPrint.disconnectPanda();
+                          },
+                          child: const Text("DISCONNECT PANDA"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            initPlatformState();
+                          },
+                          child: const Text("Paired Device"),
+                        ),
                       ],
                     ),
                   ),
-                );
-              },
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _devices.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () => initPrint(
+                            context, _devices[index].hardwareAddress ?? ""),
+                        child: Card(
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ListTile(
+                                title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(_devices[index].name ?? ""),
+                                      Text(
+                                          _devices[index].hardwareAddress ?? "")
+                                    ]),
+                                subtitle: Text(_devices[index].socketId ?? ""),
+                                leading: _devices[index] == pairedDevice
+                                    ? const Icon(
+                                        Icons.check_circle_outline_outlined)
+                                    : null,
+                              )
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+          if (isLoading)
+            Container(
+                color: Colors.black.withOpacity(0.12),
+                child: const Center(child: CircularProgressIndicator())),
+        ],
       ),
-    ),
-  );
-}
+    );
+  }
 }
