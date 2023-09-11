@@ -211,7 +211,8 @@ class _MyAppState extends State<MyApp> {
                               for (var i = 0; i < pairedDevice.length; i++) {
                                 await WiseBluetoothPrint.disconnectPanda()
                                     .then((result) async {
-                                  await WiseBluetoothPrint.disconnectPanda()
+                                  await WiseBluetoothPrint.connectPanda(
+                                          pairedDevice[i])
                                       .then((value) async {
                                     if (value) {
                                       await WiseBluetoothPrint.printPanda(
