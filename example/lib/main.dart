@@ -79,11 +79,7 @@ class _MyAppState extends State<MyApp> {
       final imageData = response.bodyBytes;
       final originalImage = img.decodeImage(imageData);
       if (originalImage != null) {
-        final resizedImage =
-            img.copyResize(originalImage, width: 250, height: 90);
-        final dataImageUri = img.encodeJpg(resizedImage);
-
-        image = base64Encode(dataImageUri);
+        image = base64Encode(img.encodeJpg(originalImage));
       }
     } else {
       log('Failed to load image');
