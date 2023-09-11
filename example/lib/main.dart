@@ -197,23 +197,9 @@ class _MyAppState extends State<MyApp> {
                         TextButton(
                           onPressed: () {
                             // Your action when the button is pressed
-                            WiseBluetoothPrint.disconnectBluePrint();
-                          },
-                          child: const Text("DISCONNECT BLUEPRINT"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // Your action when the button is pressed
                             WiseBluetoothPrint.printPanda();
                           },
                           child: const Text("PRINT PANDA"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // Your action when the button is pressed
-                            WiseBluetoothPrint.disconnectPanda();
-                          },
-                          child: const Text("DISCONNECT PANDA"),
                         ),
                         TextButton(
                           onPressed: () {
