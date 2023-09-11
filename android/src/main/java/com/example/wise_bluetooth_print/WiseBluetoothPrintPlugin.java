@@ -131,7 +131,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 e.printStackTrace();
                 result.success(false);
             }
-        });
+        }).start();
     }
 
     private void printBluePrint(String content, Result result) {
