@@ -114,24 +114,20 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void connectBluePrint(String address, @NonNull Result result) {
-        new GPDeviceConnFactoryManager.Build()
-                .setId(0)
-                .setContext(context)
-                .setName("")
-                .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
-                .setMacAddress(address)
-                .build();
+        try {
+            GPDeviceConnFactoryManager.Build()
+                    .setId(0)
+                    .setContext(context)
+                    .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
+                    .setMacAddress(address)
+                    .build()
+                    .openPort();
 
-        GPThreadPool threadPool = GPThreadPool.getInstantiation();
-        threadPool.addTask(() -> {
-            try {
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
-                result.success(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.success(false);
-            }
-        }).start();
+            result.success(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.success(false);
+        }
     }
 
     private void printBluePrint(String content, Result result) {
