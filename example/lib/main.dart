@@ -19,7 +19,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late List<PairedDevice> _devices;
-  PairedDevice? pairedDevice;
+  List<String> pairedDevice = [];
 
   bool isLoading = false;
 
@@ -78,8 +78,7 @@ class _MyAppState extends State<MyApp> {
                   .then((value) {
                 if (value) {
                   setState(() {
-                    pairedDevice = _devices.firstWhere(
-                        (e) => e.hardwareAddress == hardwareAddress);
+                    pairedDevice.add(hardwareAddress);
                   });
                 }
 
@@ -102,8 +101,7 @@ class _MyAppState extends State<MyApp> {
                   .then((value) {
                 if (value) {
                   setState(() {
-                    pairedDevice = _devices.firstWhere(
-                        (e) => e.hardwareAddress == hardwareAddress);
+                    pairedDevice.add(hardwareAddress);
                   });
                 }
 
@@ -113,6 +111,52 @@ class _MyAppState extends State<MyApp> {
               });
             },
             child: const Text("Panda"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void detailPrint(BuildContext context, String hardwareAddress, bool isPanda) {
+    // You can add more language options other than ZPL and BZPL/ZPL II for printers
+    // that don't support them.
+    showDialog(
+      context: context,
+      builder: (builder) => AlertDialog(
+        title: const Text("Printer terconnect"),
+        content: const Text("PUNTEEEEENNNNN"),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+
+              setState(() {
+                isLoading = true;
+              });
+
+              bool? value;
+
+              if (isPanda) {
+                value = await WiseBluetoothPrint.disconnectPanda();
+              } else {
+                value = await WiseBluetoothPrint.disconnectBluePrint();
+              }
+
+              if (value) {
+                setState(() {
+                  pairedDevice.remove(hardwareAddress);
+                });
+              }
+
+              setState(() {
+                isLoading = false;
+              });
+            },
+            child: const Text("Disconnect"),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -185,8 +229,22 @@ class _MyAppState extends State<MyApp> {
                     itemCount: _devices.length,
                     itemBuilder: (context, index) {
                       return GestureDetector(
-                        onTap: () => initPrint(
-                            context, _devices[index].hardwareAddress ?? ""),
+                        onTap: () {
+                          if (pairedDevice.any(
+                              (e) => e == _devices[index].hardwareAddress)) {
+                            detailPrint(
+                                context,
+                                _devices[index].hardwareAddress ?? "",
+                                _devices[index]
+                                        .name
+                                        ?.toLowerCase()
+                                        .contains("mpt") ??
+                                    false);
+                          } else {
+                            initPrint(
+                                context, _devices[index].hardwareAddress ?? "");
+                          }
+                        },
                         child: Card(
                           elevation: 1,
                           shape: RoundedRectangleBorder(
@@ -205,7 +263,8 @@ class _MyAppState extends State<MyApp> {
                                           _devices[index].hardwareAddress ?? "")
                                     ]),
                                 subtitle: Text(_devices[index].socketId ?? ""),
-                                leading: _devices[index] == pairedDevice
+                                leading: pairedDevice.any((e) =>
+                                        e == _devices[index].hardwareAddress)
                                     ? const Icon(
                                         Icons.check_circle_outline_outlined)
                                     : null,
