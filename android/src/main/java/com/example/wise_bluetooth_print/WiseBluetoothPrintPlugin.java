@@ -125,13 +125,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         threadPool.addTask(() -> {
             try {
                 deviceConnFactoryManager.openPort();
-                if (deviceConnFactoryManager.getPrinterStatus() == 1) {
-                    // Connection successful
-                    result.success(true);
-                } else {
-                    // Connection failed
-                    result.success(false);
-                }
+                result.success(true);
             } catch (Exception e) {
                 e.printStackTrace();
                 result.success(false);
