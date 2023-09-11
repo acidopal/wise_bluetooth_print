@@ -213,16 +213,13 @@ class _MyAppState extends State<MyApp> {
                               });
 
                               for (var i = 0; i < pairedDevice.length; i++) {
-                                await WiseBluetoothPrint.disconnectPanda()
-                                    .then((result) async {
-                                  await WiseBluetoothPrint.connectPanda(
-                                          pairedDevice[i])
-                                      .then((value) async {
-                                    if (value) {
-                                      await WiseBluetoothPrint.printPanda(
-                                          textEditingController.text);
-                                    }
-                                  });
+                                await WiseBluetoothPrint.connectPanda(
+                                        pairedDevice[i])
+                                    .then((value) async {
+                                  if (value) {
+                                    await WiseBluetoothPrint.printPanda(
+                                        textEditingController.text);
+                                  }
                                 });
                               }
 
