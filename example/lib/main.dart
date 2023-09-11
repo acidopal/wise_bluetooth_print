@@ -68,7 +68,8 @@ class _MyAppState extends State<MyApp> {
         return AlertDialog(
           title:
               Text(isConnect ? "Printer terconnect" : "Select printer brand"),
-          content: const Text("PUNTEEEEENNNNN"),
+          content: Text(
+              "PUNTEEEEENNNNN untuk printer ${isPanda ? "Panda" : "Blueprint"}"),
           actions: [
             isLoading
                 ? const LinearProgressIndicator()
