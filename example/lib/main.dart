@@ -220,22 +220,30 @@ class _MyAppState extends State<MyApp> {
                                 if (_devices.any((e) =>
                                     e.hardwareAddress == pairedDevice[i])) {
                                   if (isPanda(pairedDevice[i])) {
-                                    await WiseBluetoothPrint.connectPanda(
-                                            pairedDevice[i])
-                                        .then((value) async {
-                                      if (value) {
-                                        await WiseBluetoothPrint.printPanda(
-                                            textEditingController.text);
-                                      }
+                                    await WiseBluetoothPrint.disconnectPanda()
+                                        .then((result) async {
+                                      await WiseBluetoothPrint.connectPanda(
+                                              pairedDevice[i])
+                                          .then((value) async {
+                                        if (value) {
+                                          await WiseBluetoothPrint.printPanda(
+                                              textEditingController.text);
+                                        }
+                                      });
                                     });
                                   } else {
-                                    await WiseBluetoothPrint.connectBluePrint(
-                                            pairedDevice[i])
-                                        .then((value) async {
-                                      if (value) {
-                                        await WiseBluetoothPrint.printBluePrint(
-                                            textEditingController.text);
-                                      }
+                                    await WiseBluetoothPrint
+                                            .disconnectBluePrint()
+                                        .then((result) async {
+                                      await WiseBluetoothPrint.connectBluePrint(
+                                              pairedDevice[i])
+                                          .then((value) async {
+                                        if (value) {
+                                          await WiseBluetoothPrint
+                                              .printBluePrint(
+                                                  textEditingController.text);
+                                        }
+                                      });
                                     });
                                   }
                                 }
