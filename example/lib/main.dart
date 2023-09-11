@@ -203,13 +203,23 @@ class _MyAppState extends State<MyApp> {
                           child: const Text("PRINT BLUEPRINT"),
                         ),
                         TextButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (textEditingController.text.isEmpty) {
                               showAlertDialog(context, "Please fill TextField");
                             } else {
                               // Your action when the button is pressed
-                              WiseBluetoothPrint.printPanda(
-                                  textEditingController.text);
+                              for (var i = 0; i < pairedDevice.length; i++) {
+                                await WiseBluetoothPrint.disconnectPanda()
+                                    .then((result) async {
+                                  await WiseBluetoothPrint.disconnectPanda()
+                                      .then((value) async {
+                                    if (value) {
+                                      await WiseBluetoothPrint.printPanda(
+                                          textEditingController.text);
+                                    }
+                                  });
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT PANDA"),
