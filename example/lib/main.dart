@@ -57,114 +57,98 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void initPrint(BuildContext context, String hardwareAddress) {
+  Future<void> detailPrint(BuildContext context, String hardwareAddress,
+      bool isPanda, bool isConnect) async {
     // You can add more language options other than ZPL and BZPL/ZPL II for printers
     // that don't support them.
-    showDialog(
+    await showDialog(
       context: context,
-      builder: (builder) => AlertDialog(
-        title: const Text("Select printer brand"),
-        content: const Text("PUNTEEEEENNNNN"),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
+      barrierDismissible: false,
+      builder: (builder) => StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title:
+              Text(isConnect ? "Printer terconnect" : "Select printer brand"),
+          content: const Text("PUNTEEEEENNNNN"),
+          actions: [
+            isLoading
+                ? const LinearProgressIndicator()
+                : Row(
+                    children: [
+                      isConnect
+                          ? TextButton(
+                              onPressed: () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
 
-              setState(() {
-                isLoading = true;
-              });
+                                bool? value;
 
-              await WiseBluetoothPrint.connectBluePrint(hardwareAddress)
-                  .then((value) {
-                if (value) {
-                  setState(() {
-                    pairedDevice.add(hardwareAddress);
-                  });
-                }
+                                if (isPanda) {
+                                  value = await WiseBluetoothPrint
+                                      .disconnectPanda();
+                                } else {
+                                  value = await WiseBluetoothPrint
+                                      .disconnectBluePrint();
+                                }
 
-                setState(() {
-                  isLoading = false;
-                });
-              });
-            },
-            child: const Text("Blueprint"),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
+                                if (value) {
+                                  setState(() {
+                                    pairedDevice.remove(hardwareAddress);
+                                  });
+                                }
 
-              setState(() {
-                isLoading = true;
-              });
+                                setState(() {
+                                  isLoading = false;
+                                });
 
-              await WiseBluetoothPrint.connectPanda(hardwareAddress)
-                  .then((value) {
-                if (value) {
-                  setState(() {
-                    pairedDevice.add(hardwareAddress);
-                  });
-                }
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Disconnect"),
+                            )
+                          : TextButton(
+                              onPressed: () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
 
-                setState(() {
-                  isLoading = false;
-                });
-              });
-            },
-            child: const Text("Panda"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Close", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+                                bool? value;
 
-  void detailPrint(BuildContext context, String hardwareAddress, bool isPanda) {
-    // You can add more language options other than ZPL and BZPL/ZPL II for printers
-    // that don't support them.
-    showDialog(
-      context: context,
-      builder: (builder) => AlertDialog(
-        title: const Text("Printer terconnect"),
-        content: const Text("PUNTEEEEENNNNN"),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
+                                if (isPanda) {
+                                  value = await WiseBluetoothPrint.connectPanda(
+                                      hardwareAddress);
+                                } else {
+                                  value =
+                                      await WiseBluetoothPrint.connectBluePrint(
+                                          hardwareAddress);
+                                }
 
-              setState(() {
-                isLoading = true;
-              });
+                                if (value) {
+                                  setState(() {
+                                    pairedDevice.add(hardwareAddress);
+                                  });
+                                }
 
-              bool? value;
+                                setState(() {
+                                  isLoading = false;
+                                });
 
-              if (isPanda) {
-                value = await WiseBluetoothPrint.disconnectPanda();
-              } else {
-                value = await WiseBluetoothPrint.disconnectBluePrint();
-              }
-
-              if (value) {
-                setState(() {
-                  pairedDevice.remove(hardwareAddress);
-                });
-              }
-
-              setState(() {
-                isLoading = false;
-              });
-            },
-            child: const Text("Disconnect"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Close", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Connect"),
+                            ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text("Close",
+                            style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+          ],
+        );
+      }),
+    ).whenComplete(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -216,20 +200,16 @@ class _MyAppState extends State<MyApp> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () {
-                          if (pairedDevice.any(
-                              (e) => e == _devices[index].hardwareAddress)) {
-                            detailPrint(
-                                context,
-                                _devices[index].hardwareAddress ?? "",
-                                _devices[index]
-                                        .name
-                                        ?.toLowerCase()
-                                        .contains("mpt") ??
-                                    false);
-                          } else {
-                            initPrint(
-                                context, _devices[index].hardwareAddress ?? "");
-                          }
+                          detailPrint(
+                              context,
+                              _devices[index].hardwareAddress ?? "",
+                              _devices[index]
+                                      .name
+                                      ?.toLowerCase()
+                                      .contains("mpt") ??
+                                  false,
+                              pairedDevice.any(
+                                  (e) => e == _devices[index].hardwareAddress));
                         },
                         child: Card(
                           elevation: 1,
@@ -265,10 +245,12 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
           ),
+          /*
           if (isLoading)
             Container(
                 color: Colors.black.withOpacity(0.12),
                 child: const Center(child: CircularProgressIndicator())),
+          */
         ],
       ),
     );
