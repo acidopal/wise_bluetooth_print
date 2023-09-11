@@ -120,29 +120,47 @@ class _MyAppState extends State<MyApp> {
                                   isLoading = true;
                                 });
 
-                                bool? value;
-
                                 if (isPanda) {
-                                  value = await WiseBluetoothPrint.connectPanda(
-                                      hardwareAddress);
+                                  String value =
+                                      await WiseBluetoothPrint.connectPanda(
+                                          hardwareAddress);
+
+                                  if (value == "success") {
+                                    setState(() {
+                                      pairedDevice.add(Devices(
+                                          hardwareAddress: hardwareAddress));
+                                    });
+
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+
+                                    Navigator.of(context).pop();
+                                  } else {
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+
+                                    showAlertDialog(context, value.toString());
+                                  }
                                 } else {
-                                  value =
+                                  bool value =
                                       await WiseBluetoothPrint.connectBluePrint(
                                           hardwareAddress);
-                                }
 
-                                if (value) {
+                                  if (value) {
+                                    setState(() {
+                                      pairedDevice.add(Devices(
+                                          hardwareAddress: hardwareAddress));
+                                    });
+                                  }
+
                                   setState(() {
-                                    pairedDevice.add(Devices(
-                                        hardwareAddress: hardwareAddress));
+                                    isLoading = false;
                                   });
+
+                                  Navigator.of(context).pop();
                                 }
-
-                                setState(() {
-                                  isLoading = false;
-                                });
-
-                                Navigator.of(context).pop();
                               },
                               child: const Text("Connect"),
                             ),
@@ -213,26 +231,33 @@ class _MyAppState extends State<MyApp> {
       for (var i = 0; i < getList.length; i++) {
         if (_devices
             .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
-          if (isPanda(getList[i].hardwareAddress ?? "")) {
-            await WiseBluetoothPrint.disconnectPanda().then((result) async {
-              await WiseBluetoothPrint.connectPanda(
-                      getList[i].hardwareAddress ?? "")
-                  .then((value) async {
-                if (value) {
-                  await WiseBluetoothPrint.printPanda(content);
-                }
+          try {
+            if (isPanda(getList[i].hardwareAddress ?? "")) {
+              await WiseBluetoothPrint.disconnectPanda().then((result) async {
+                await WiseBluetoothPrint.connectPanda(
+                        getList[i].hardwareAddress ?? "")
+                    .then((value) async {
+                  if (value == "success") {
+                    await WiseBluetoothPrint.printPanda(content);
+                  } else {
+                    showAlertDialog(context, value.toString());
+                  }
+                });
               });
-            });
-          } else {
-            await WiseBluetoothPrint.disconnectBluePrint().then((result) async {
-              await WiseBluetoothPrint.connectBluePrint(
-                      getList[i].hardwareAddress ?? "")
-                  .then((value) async {
-                if (value) {
-                  await WiseBluetoothPrint.printBluePrint(content);
-                }
+            } else {
+              await WiseBluetoothPrint.disconnectBluePrint()
+                  .then((result) async {
+                await WiseBluetoothPrint.connectBluePrint(
+                        getList[i].hardwareAddress ?? "")
+                    .then((value) async {
+                  if (value) {
+                    await WiseBluetoothPrint.printBluePrint(content);
+                  }
+                });
               });
-            });
+            }
+          } catch (e) {
+            showAlertDialog(context, e.toString());
           }
         }
       }
