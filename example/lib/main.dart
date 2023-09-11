@@ -101,8 +101,8 @@ class _MyAppState extends State<MyApp> {
 
                                 if (value) {
                                   setState(() {
-                                    pairedDevice.remove(Devices(
-                                        hardwareAddress: hardwareAddress));
+                                    pairedDevice.removeWhere((e) =>
+                                        e.hardwareAddress == hardwareAddress);
                                   });
                                 }
 
