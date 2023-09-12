@@ -14,6 +14,8 @@ import com.bumptech.glide.request.RequestOptions;
 import com.example.wise_bluetooth_print.blueprint.GPDeviceConnFactoryManager;
 import com.example.wise_bluetooth_print.blueprint.GPThreadPool;
 import com.gprinter.command.EscCommand;
+import com.example.wise_bluetooth_print.panda.printerlibs_caysnpos;
+import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,12 +27,14 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
     private MethodChannel channel;
     private Context context;
 
-    private HashMap<String, Integer> blueprintIdAddress = new HashMap<>();
+    private Pointer pandaPointer;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -56,11 +60,27 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "printBluePrint": {
-                printBluePrint(result);
+                String content = call.argument("content");
+                printBluePrint(content, result);
                 break;
             }
             case "disconnectBluePrint": {
                 disconnectBluePrint(result);
+                break;
+            }
+            case "connectPanda": {
+                String address = call.argument("address");
+                connectPanda(address, result);
+                break;
+            }
+            case "printPanda": {
+                String content = call.argument("content");
+                String imageUrl = call.argument("imageUrl");
+                printPanda(content, imageUrl, result);
+                break;
+            }
+            case "disconnectPanda": {
+                disconnectPanda(result);
                 break;
             }
 
@@ -97,6 +117,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void connectBluePrint(String address, @NonNull Result result) {
+        System.out.println("Address");
+        System.out.println(address);
         new GPDeviceConnFactoryManager.Build()
                 .setId(0)
                 .setContext(context)
@@ -117,14 +139,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         });
     }
 
-    private void printBluePrint(Result result) {
+    private void printBluePrint(String content, Result result) {
         new Thread() {
             @Override
             public void run() {
                 EscCommand esc = new EscCommand();
                 esc.addInitializePrinter();
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
-                esc.addText("LEFT TEXT\n");
+                esc.addText(content + "\n");
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                 esc.addText("CENTER TEXT\n");
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.RIGHT);
@@ -142,6 +164,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                             .get();
                     esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                     esc.addRastBitImage(bitmap, 200, 0);
+                    esc.addText("\n\n\n\n");
                 } catch (Exception e) {
                     e.printStackTrace();
                     esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
@@ -151,8 +174,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 result.success(true);
             }
         }.start();
-
-
     }
 
     private void disconnectBluePrint(@NonNull Result result) {
@@ -160,6 +181,70 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         result.success(true);
     }
 
+    private void connectPanda(String address, Result result) {
+        try {
+            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            result.success("success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.success(e.toString());
+        }
+    }
+
+    private void printPanda(String content, String imageUrl, Result result) {
+        new Thread() {
+            @Override
+            public void run() {
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_Left);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n");
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_HCenter);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "CENTER_TEXT\n");
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_Right);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "RIGHT_TEXT\n");
+
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_HCenter);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "PRINTING IMAGE\n");
+
+                if (imageUrl != null) {
+                    try {
+                        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                        if (bitmap != null) {
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            int page_width = 384;
+                            int dstw = width;
+                            int dsth = height;
+                            if (dstw > page_width) {
+                                dstw = page_width;
+                                dsth = (int) (dstw * ((double) height / width));
+                            }
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                    printerlibs_caysnpos.PosAlignment_HCenter);
+                            printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
+                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n\n\n\n");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
+                                "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                    }
+                }
+
+                result.success(true);
+            }
+        }.start();
+    }
+
+    private void disconnectPanda(@NonNull Result result) {
+        printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+        result.success(true);
+    }
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {

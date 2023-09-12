@@ -14,18 +14,15 @@ import java.io.ByteArrayOutputStream;
 
 public interface printerlibs_caysnpos extends Library {
 
-    // static interface method need jdk1.8. here we use inner class to avoid this porblem.
-    public class GetLibraryPath_Helper {
-        // can replaced by absolute path
-        public static String GetLibraryPath() {
-            // force call JNI_OnLoad
-            if (Platform.isAndroid())
-                System.loadLibrary("PrinterLibs");
-            return "PrinterLibs";
-        }
-    }
-    public static final printerlibs_caysnpos INSTANCE = (printerlibs_caysnpos) Native.loadLibrary(GetLibraryPath_Helper.GetLibraryPath(), printerlibs_caysnpos.class);
+    public static final printerlibs_caysnpos INSTANCE = loadLibrary();
 
+    public static printerlibs_caysnpos loadLibrary() {
+        if (Platform.isAndroid()) {
+            System.loadLibrary("PrinterLibs");
+        }
+        return (printerlibs_caysnpos) Native.loadLibrary("PrinterLibs", printerlibs_caysnpos.class);
+    }
+    
     public static final int ComDataBits_4 = 4;
     public static final int ComDataBits_5 = 5;
     public static final int ComDataBits_6 = 6;

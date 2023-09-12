@@ -34,13 +34,38 @@ class WiseBluetoothPrint {
     return ret;
   }
 
-  static Future<bool> printBluePrint() async {
-    var ret = await _channel.invokeMethod('printBluePrint');
+  static Future<bool> printBluePrint(String content) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'content': content,
+    };
+    var ret = await _channel.invokeMethod('printBluePrint', params);
     return ret;
   }
 
   static Future<bool> disconnectBluePrint() async {
     var ret = await _channel.invokeMethod('disconnectBluePrint');
+    return ret;
+  }
+
+  static Future<String> connectPanda(String address) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'address': address,
+    };
+    var ret = await _channel.invokeMethod('connectPanda', params);
+    return ret;
+  }
+
+  static Future<bool> printPanda(String content, {String? imageUrl}) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'content': content,
+      'imageUrl': imageUrl,
+    };
+    var ret = await _channel.invokeMethod('printPanda', params);
+    return ret;
+  }
+
+  static Future<bool> disconnectPanda() async {
+    var ret = await _channel.invokeMethod('disconnectPanda');
     return ret;
   }
 }
