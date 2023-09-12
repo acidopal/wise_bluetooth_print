@@ -191,9 +191,17 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     private void connectPanda(String address, Result result) {
         try {
-            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            pandaPointers.put(address, pandaPointer);
-            result.success(true);
+            if (pandaPointers.containsKey(address)) {
+                pandaPointers.remove(address);
+
+                Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+                pandaPointers.put(address, pandaPointer);
+                result.success(true);
+            } else {
+                Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+                pandaPointers.put(address, pandaPointer);
+                result.success(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             result.success(false);
