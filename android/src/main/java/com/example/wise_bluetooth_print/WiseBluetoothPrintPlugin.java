@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.ParcelUuid;
-
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
@@ -19,8 +18,8 @@ import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,8 +34,7 @@ import android.util.Base64;
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
     private MethodChannel channel;
     private Context context;
-
-    private HashMap<String, Pointer> pandaPointers = new HashMap<>();
+    private Map<String, Pointer> pandaPointers = new HashMap<>();
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -47,96 +45,70 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        switch (call.method) {
-            case "getPlatformVersion":
-                result.success("Android " + android.os.Build.VERSION.RELEASE);
-                break;
-            case "getPairedDevices": {
-                getPairedDevices(result);
-                break;
+        try {
+            switch (call.method) {
+                case "getPlatformVersion":
+                    result.success("Android " + android.os.Build.VERSION.RELEASE);
+                    break;
+                case "getPairedDevices":
+                    getPairedDevices(result);
+                    break;
+                case "connectBluePrint":
+                    connectBluePrint(call.argument("address"), result);
+                    break;
+                case "printBluePrint":
+                    printBluePrint(call.argument("content"), result);
+                    break;
+                case "disconnectBluePrint":
+                    disconnectBluePrint(result);
+                    break;
+                case "connectPanda":
+                    connectPanda(call.argument("address"), result);
+                    break;
+                case "printPanda":
+                    printPanda(call.argument("address"), call.argument("content"), call.argument("imageUrl"), result);
+                    break;
+                case "disconnectPanda":
+                    disconnectPanda(call.argument("address"), result);
+                    break;
+                case "clearPanda":
+                    clearPanda(result);
+                    break;
+                default:
+                    result.notImplemented();
+                    break;
             }
-
-            case "connectBluePrint": {
-                String address = call.argument("address");
-                connectBluePrint(address, result);
-                break;
-            }
-            case "printBluePrint": {
-                String content = call.argument("content");
-                printBluePrint(content, result);
-                break;
-            }
-            case "disconnectBluePrint": {
-                disconnectBluePrint(result);
-                break;
-            }
-            case "connectPanda": {
-                String address = call.argument("address");
-                connectPanda(address, result);
-                break;
-            }
-            case "printPanda": {
-                String address = call.argument("address");
-                String content = call.argument("content");
-                String imageUrl = call.argument("imageUrl");
-                printPanda(address, content, imageUrl, result);
-                break;
-            }
-            case "disconnectPanda": {
-                String address = call.argument("address");
-                disconnectPanda(address, result);
-                break;
-            }
-            case "clearPanda": {
-                clearPanda(result);
-                break;
-            }
-
-            default:
-                result.notImplemented();
-                break;
+        } catch (Exception e) {
+            result.error("Error", e.getMessage(), null);
         }
     }
 
     private void getPairedDevices(Result result) {
-        ArrayList<String> deviceInfoList = new ArrayList<>();
+        List<Map<String, String>> deviceInfoList = new ArrayList<>();
         BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-        if (bluetooth != null) {
-            if (bluetooth.isEnabled()) {
-                Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-
-                if (pairedDevices.size() > 0) {
-                    for (BluetoothDevice device : pairedDevices) {
-                        String deviceName = device.getName();
-                        String deviceHardwareAddress = device.getAddress();
-                        device.fetchUuidsWithSdp();
-                        ParcelUuid[] uuids = device.getUuids();
-                        UUID socket = uuids[0].getUuid();
-
-                        deviceInfoList.add(deviceName);
-                        deviceInfoList.add(deviceHardwareAddress);
-                        deviceInfoList.add(socket.toString());
-                    }
-                }
+        if (bluetooth != null && bluetooth.isEnabled()) {
+            Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+            for (BluetoothDevice device : pairedDevices) {
+                Map<String, String> deviceInfo = new HashMap<>();
+                deviceInfo.put("name", device.getName());
+                deviceInfo.put("address", device.getAddress());
+                deviceInfo.put("socket", device.getUuids()[0].getUuid().toString());
+                deviceInfoList.add(deviceInfo);
             }
         }
-        bluetooth.cancelDiscovery();
         result.success(deviceInfoList);
     }
 
     private void connectBluePrint(String address, @NonNull Result result) {
-        System.out.println("Address");
-        System.out.println(address);
-        new GPDeviceConnFactoryManager.Build()
+        GPDeviceConnFactoryManager.Build builder = new GPDeviceConnFactoryManager.Build()
                 .setId(0)
                 .setContext(context)
                 .setName("")
                 .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
-                .setMacAddress(address)
-                .build();
+                .setMacAddress(address);
 
-        GPThreadPool threadPool = GPThreadPool.getInstantiation();
-        threadPool.addTask(() -> {
+        GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0] = builder.build();
+        GPThreadPool.getInstantiation().addTask(() -> {
             try {
                 GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
                 result.success(true);
@@ -148,9 +120,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void printBluePrint(String content, Result result) {
-        new Thread() {
-            @Override
-            public void run() {
+        new Thread(() -> {
+            try {
                 EscCommand esc = new EscCommand();
                 esc.addInitializePrinter();
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
@@ -163,25 +134,23 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                 esc.addText("PRINTING IMAGE\n");
 
-                try {
-                    Bitmap bitmap = Glide.with(context)
-                            .asBitmap()
-                            .load(R.drawable.carimage)
-                            .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
-                            .submit(200, 200)
-                            .get();
-                    esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
-                    esc.addRastBitImage(bitmap, 200, 0);
-                    esc.addText("\n\n\n\n");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
-                }
+                Bitmap bitmap = Glide.with(context)
+                        .asBitmap()
+                        .load(R.drawable.carimage)
+                        .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
+                        .submit(200, 200)
+                        .get();
+                esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                esc.addRastBitImage(bitmap, 200, 0);
+                esc.addText("\n\n\n\n");
 
                 GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].sendDataImmediately(esc.getCommand());
                 result.success(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.success(false);
             }
-        }.start();
+        }).start();
     }
 
     private void disconnectBluePrint(@NonNull Result result) {
@@ -205,59 +174,48 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void printPanda(String address, String content, String imageUrl, Result result) {
-        new Thread() {
-            @Override
-            public void run() {
-                if (pandaPointers.containsKey(address)) {
-                    Pointer pandaPointer = pandaPointers.get(address);
+        new Thread(() -> {
+            if (pandaPointers.containsKey(address)) {
+                Pointer pandaPointer = pandaPointers.get(address);
 
-                    if (pandaPointer != null) {
-                        try {
-                            if (imageUrl != null) {
-                                try {
-                                    byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-                                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-                                    if (bitmap != null) {
-                                        int width = bitmap.getWidth();
-                                        int height = bitmap.getHeight();
-                                        int page_width = 384;
-                                        int dstw = width;
-                                        int dsth = height;
-                                        if (dstw > page_width) {
-                                            dstw = page_width;
-                                            dsth = (int) (dstw * ((double) height / width));
-                                        }
-                                        printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
-                                                printerlibs_caysnpos.PosAlignment_HCenter);
-                                        printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
-                                                .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap,
-                                                        0);
-                                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
-                                    }
-                                } catch (Exception r) {
-                                    r.printStackTrace();
-                                    printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
-                                            "FAILED PRINTING IMAGE\nerrormessage : " + r.getMessage());
+                if (pandaPointer != null) {
+                    try {
+                        if (imageUrl != null) {
+                            byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                            if (bitmap != null) {
+                                int width = bitmap.getWidth();
+                                int height = bitmap.getHeight();
+                                int pageWidth = 384;
+                                int dstw = width;
+                                int dsth = height;
+                                if (dstw > pageWidth) {
+                                    dstw = pageWidth;
+                                    dsth = (int) (dstw * ((double) height / width));
                                 }
+                                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                        printerlibs_caysnpos.PosAlignment_HCenter);
+                                printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
+                                        .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
                             }
-
-                            printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
-                                    printerlibs_caysnpos.PosAlignment_Left);
-                            printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
-
-                            result.success(true);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            result.success(false);
                         }
-                    } else {
+
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                printerlibs_caysnpos.PosAlignment_Left);
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
+                        result.success(true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                         result.success(false);
                     }
                 } else {
                     result.success(false);
                 }
+            } else {
+                result.success(false);
             }
-        }.start();
+        }).start();
     }
 
     private void disconnectPanda(String address, @NonNull Result result) {
@@ -268,7 +226,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
                 pandaPointers.remove(address);
             }
-
             result.success(true);
         } else {
             result.success(true);
@@ -276,14 +233,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void clearPanda(@NonNull Result result) {
-        for (Entry<String, Pointer> entry : pandaPointers.entrySet()) {
-            Pointer pandaPointer = entry.getValue();
-
+        for (Pointer pandaPointer : pandaPointers.values()) {
             if (pandaPointer != null) {
                 printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
             }
         }
-
         pandaPointers.clear();
         result.success(true);
     }
