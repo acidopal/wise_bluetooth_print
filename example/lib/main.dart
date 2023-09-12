@@ -297,18 +297,22 @@ class _MyAppState extends State<MyApp> {
                         (type == "receipt" && image != null) ? image : null)
                 .then((result) async {
               if (!result) {
-                await WiseBluetoothPrint.connectPanda(
+                await WiseBluetoothPrint.disconnectPanda(
                         getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value == "success") {
-                    await WiseBluetoothPrint.printPanda(
-                        getList[i].hardwareAddress ?? "", content,
-                        imageUrl: (type == "receipt" && image != null)
-                            ? image
-                            : null);
-                  } else {
-                    showAlertDialog(context, value.toString());
-                  }
+                    .then((error) async {
+                  await WiseBluetoothPrint.connectPanda(
+                          getList[i].hardwareAddress ?? "")
+                      .then((value) async {
+                    if (value == "success") {
+                      await WiseBluetoothPrint.printPanda(
+                          getList[i].hardwareAddress ?? "", content,
+                          imageUrl: (type == "receipt" && image != null)
+                              ? image
+                              : null);
+                    } else {
+                      showAlertDialog(context, value.toString());
+                    }
+                  });
                 });
               }
             });
