@@ -296,7 +296,7 @@ class _MyAppState extends State<MyApp> {
                         (type == "receipt" && image != null) ? image : null)
                 .then((result) async {
               print("Is print $result");
-              if (!result) {
+              if (result == false) {
                 await WiseBluetoothPrint.disconnectPanda(
                         getList[i].hardwareAddress ?? "")
                     .then((error) async {
