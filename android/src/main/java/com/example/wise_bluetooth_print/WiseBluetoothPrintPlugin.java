@@ -224,7 +224,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
                 printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
                         printerlibs_caysnpos.PosAlignment_Left);
-                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n\n\n");
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
 
                 result.success(true);
             }
