@@ -84,18 +84,28 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void getPairedDevices(Result result) {
-        List<Map<String, String>> deviceInfoList = new ArrayList<>();
+        ArrayList<String> deviceInfoList = new ArrayList<>();
         BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-        if (bluetooth != null && bluetooth.isEnabled()) {
-            Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
-            for (BluetoothDevice device : pairedDevices) {
-                Map<String, String> deviceInfo = new HashMap<>();
-                deviceInfo.put("name", device.getName());
-                deviceInfo.put("address", device.getAddress());
-                deviceInfo.put("socket", device.getUuids()[0].getUuid().toString());
-                deviceInfoList.add(deviceInfo);
+        if (bluetooth != null) {
+            if (bluetooth.isEnabled()) {
+                Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
+
+                if (pairedDevices.size() > 0) {
+                    for (BluetoothDevice device : pairedDevices) {
+                        String deviceName = device.getName();
+                        String deviceHardwareAddress = device.getAddress();
+                        device.fetchUuidsWithSdp();
+                        ParcelUuid[] uuids = device.getUuids();
+                        UUID socket = uuids[0].getUuid();
+
+                        deviceInfoList.add(deviceName);
+                        deviceInfoList.add(deviceHardwareAddress);
+                        deviceInfoList.add(socket.toString());
+                    }
+                }
             }
         }
+        bluetooth.cancelDiscovery();
         result.success(deviceInfoList);
     }
 
