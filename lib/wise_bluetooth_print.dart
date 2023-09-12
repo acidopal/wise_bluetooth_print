@@ -47,7 +47,7 @@ class WiseBluetoothPrint {
     return ret;
   }
 
-  static Future<String> connectPanda(String address) async {
+  static Future<bool> connectPanda(String address) async {
     final Map<String, dynamic> params = <String, dynamic>{
       'address': address,
     };

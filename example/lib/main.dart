@@ -152,11 +152,11 @@ class _MyAppState extends State<MyApp> {
                                     isLoading = true;
                                   });
 
-                                  String value =
+                                  bool value =
                                       await WiseBluetoothPrint.connectPanda(
                                           hardwareAddress);
 
-                                  if (value == "success") {
+                                  if (value) {
                                     setState(() {
                                       pairedDevice.add(Devices(
                                           hardwareAddress: hardwareAddress));
@@ -300,7 +300,7 @@ class _MyAppState extends State<MyApp> {
             final value = await WiseBluetoothPrint.connectPanda(
                 device.hardwareAddress ?? "");
 
-            if (value == "success") {
+            if (value) {
               await WiseBluetoothPrint.printPanda(
                 device.hardwareAddress ?? "",
                 content,
