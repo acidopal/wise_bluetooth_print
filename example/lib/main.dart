@@ -450,7 +450,7 @@ class _MyAppState extends State<MyApp> {
                               });
 
                               await readyPrint("receipt");
-                              await Future.delayed(const Duration(seconds: 1));
+                              await Future.delayed(const Duration(seconds: 4));
                               await readyPrint("food");
                               await readyPrint("drink");
 
