@@ -29,12 +29,13 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
+import java.util.HashMap;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
     private MethodChannel channel;
     private Context context;
 
-    private Pointer pandaPointer;
+    private HashMap<String, Pointer> pandaPointers = new HashMap<>();
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -74,13 +75,15 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "printPanda": {
+                String address = call.argument("address");
                 String content = call.argument("content");
                 String imageUrl = call.argument("imageUrl");
-                printPanda(content, imageUrl, result);
+                printPanda(address, content, imageUrl, result);
                 break;
             }
             case "disconnectPanda": {
-                disconnectPanda(result);
+                String address = call.argument("address");
+                disconnectPanda(address, result);
                 break;
             }
 
@@ -183,7 +186,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     private void connectPanda(String address, Result result) {
         try {
-            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            pandaPointers.put(address, pandaPointer);
             result.success("success");
         } catch (Exception e) {
             e.printStackTrace();
@@ -191,10 +195,12 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }
     }
 
-    private void printPanda(String content, String imageUrl, Result result) {
+    private void printPanda(String address, String content, String imageUrl, Result result) {
         new Thread() {
             @Override
             public void run() {
+                Pointer pandaPointer = pandaPointers.get(address);
+
                 if (imageUrl != null) {
                     try {
                         byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
@@ -231,8 +237,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }.start();
     }
 
-    private void disconnectPanda(@NonNull Result result) {
-        printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+    private void disconnectPanda(String address, @NonNull Result result) {
+        Pointer pandaPointer = pandaPointers.get(address);
+
+        if (pandaPointer != null) {
+            printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+            pandaPointers.remove(address);
+        }
+
         result.success(true);
     }
 

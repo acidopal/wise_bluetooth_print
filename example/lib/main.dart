@@ -116,8 +116,9 @@ class _MyAppState extends State<MyApp> {
 
                                   bool? value;
 
-                                  value = await WiseBluetoothPrint
-                                      .disconnectPanda();
+                                  value =
+                                      await WiseBluetoothPrint.disconnectPanda(
+                                          hardwareAddress);
 
                                   /*
                                   if (isPanda) {
@@ -290,19 +291,9 @@ class _MyAppState extends State<MyApp> {
           try {
             await Future.delayed(const Duration(seconds: 2));
 
-            await WiseBluetoothPrint.disconnectPanda().then((result) async {
-              await WiseBluetoothPrint.connectPanda(
-                      getList[i].hardwareAddress ?? "")
-                  .then((value) async {
-                if (value == "success") {
-                  await WiseBluetoothPrint.printPanda(content,
-                      imageUrl:
-                          (type == "receipt" && image != null) ? image : null);
-                } else {
-                  showAlertDialog(context, value.toString());
-                }
-              });
-            });
+            await WiseBluetoothPrint.printPanda(
+                getList[i].hardwareAddress ?? "", content,
+                imageUrl: (type == "receipt" && image != null) ? image : null);
 
             /*
             if (isPanda(getList[i].hardwareAddress ?? "")) {

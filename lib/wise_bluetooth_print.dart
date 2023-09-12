@@ -55,8 +55,10 @@ class WiseBluetoothPrint {
     return ret;
   }
 
-  static Future<bool> printPanda(String content, {String? imageUrl}) async {
+  static Future<bool> printPanda(String address, String content,
+      {String? imageUrl}) async {
     final Map<String, dynamic> params = <String, dynamic>{
+      'address': address,
       'content': content,
       'imageUrl': imageUrl,
     };
@@ -64,8 +66,11 @@ class WiseBluetoothPrint {
     return ret;
   }
 
-  static Future<bool> disconnectPanda() async {
-    var ret = await _channel.invokeMethod('disconnectPanda');
+  static Future<bool> disconnectPanda(String address) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'address': address,
+    };
+    var ret = await _channel.invokeMethod('disconnectPanda', params);
     return ret;
   }
 }
