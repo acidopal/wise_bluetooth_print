@@ -58,6 +58,7 @@ class _MyAppState extends State<MyApp> {
     List<PairedDevice> devices = <PairedDevice>[];
 
     try {
+      await WiseBluetoothPrint.clearPanda();
       devices = await WiseBluetoothPrint.getPairedDevices();
     } on PlatformException {
       devices = <PairedDevice>[];
@@ -116,8 +117,9 @@ class _MyAppState extends State<MyApp> {
 
                                   bool? value;
 
-                                  value = await WiseBluetoothPrint
-                                      .disconnectPanda();
+                                  value =
+                                      await WiseBluetoothPrint.disconnectPanda(
+                                          hardwareAddress);
 
                                   /*
                                   if (isPanda) {
@@ -150,11 +152,11 @@ class _MyAppState extends State<MyApp> {
                                     isLoading = true;
                                   });
 
-                                  String value =
+                                  bool value =
                                       await WiseBluetoothPrint.connectPanda(
                                           hardwareAddress);
 
-                                  if (value == "success") {
+                                  if (value) {
                                     setState(() {
                                       pairedDevice.add(Devices(
                                           hardwareAddress: hardwareAddress));
@@ -169,8 +171,6 @@ class _MyAppState extends State<MyApp> {
                                     setState(() {
                                       isLoading = false;
                                     });
-
-                                    showAlertDialog(context, value.toString());
                                   }
 
                                   /*
@@ -235,26 +235,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future<void> showAlertDialog(BuildContext context, String content) async {
-    await showDialog(
-      context: context,
-      builder: (builder) => StatefulBuilder(builder: (context, setState) {
-        return AlertDialog(
-          title: const Text("Information"),
-          content: Text(content),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      }),
-    ).whenComplete(() {
-      setState(() {});
-    });
-  }
-
   bool isPanda(String hardwareAddress) {
     return _devices.any((e) => e.hardwareAddress == hardwareAddress)
         ? (_devices
@@ -267,72 +247,47 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> readyPrint(String type) async {
-    if (pairedDevice.any((e) =>
+    final selectedDevices = pairedDevice.where((e) =>
         (type == "food" && (e.food ?? false)) ||
         (type == "drink" && (e.drink ?? false)) ||
-        (type == "receipt" && (e.receipt ?? false)))) {
-      List<Devices> getList = pairedDevice
-          .where((e) =>
-              (type == "food" && (e.food ?? false)) ||
-              (type == "drink" && (e.drink ?? false)) ||
-              (type == "receipt" && (e.receipt ?? false)))
-          .toList();
+        (type == "receipt" && (e.receipt ?? false)));
 
-      String content = type == "food"
-          ? foodEditingController.text
-          : (type == "drink"
-              ? drinkEditingController.text
-              : receiptEditingController.text);
+    final content = type == "food"
+        ? foodEditingController.text
+        : (type == "drink"
+            ? drinkEditingController.text
+            : receiptEditingController.text);
 
-      for (var i = 0; i < getList.length; i++) {
-        if (_devices
-            .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
-          try {
-            await Future.delayed(const Duration(seconds: 2));
+    for (var device in selectedDevices) {
+      if (_devices.any((e) => e.hardwareAddress == device.hardwareAddress)) {
+        try {
+          final startTime = DateTime.now();
+          final result = await WiseBluetoothPrint.printPanda(
+            device.hardwareAddress ?? "",
+            content,
+            imageUrl: (type == "receipt" && image != null) ? image : null,
+          );
+          final endTime = DateTime.now();
+          final duration = endTime.difference(startTime);
 
-            await WiseBluetoothPrint.disconnectPanda().then((result) async {
-              await WiseBluetoothPrint.connectPanda(
-                      getList[i].hardwareAddress ?? "")
-                  .then((value) async {
-                if (value == "success") {
-                  await WiseBluetoothPrint.printPanda(content,
-                      imageUrl:
-                          (type == "receipt" && image != null) ? image : null);
-                } else {
-                  showAlertDialog(context, value.toString());
-                }
-              });
-            });
+          print("Is print $result ${duration.inMilliseconds}");
 
-            /*
-            if (isPanda(getList[i].hardwareAddress ?? "")) {
-              await WiseBluetoothPrint.disconnectPanda().then((result) async {
-                await WiseBluetoothPrint.connectPanda(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value == "success") {
-                    await WiseBluetoothPrint.printPanda(content);
-                  } else {
-                    showAlertDialog(context, value.toString());
-                  }
-                });
-              });
-            } else {
-              await WiseBluetoothPrint.disconnectBluePrint()
-                  .then((result) async {
-                await WiseBluetoothPrint.connectBluePrint(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value) {
-                    await WiseBluetoothPrint.printBluePrint(content);
-                  }
-                });
-              });
+          if (result == false) {
+            await WiseBluetoothPrint.disconnectPanda(
+                device.hardwareAddress ?? "");
+            final value = await WiseBluetoothPrint.connectPanda(
+                device.hardwareAddress ?? "");
+
+            if (value) {
+              await WiseBluetoothPrint.printPanda(
+                device.hardwareAddress ?? "",
+                content,
+                imageUrl: (type == "receipt" && image != null) ? image : null,
+              );
             }
-            */
-          } catch (e) {
-            showAlertDialog(context, e.toString());
           }
+        } catch (e) {
+          print(e.toString());
         }
       }
     }
@@ -360,90 +315,95 @@ class _MyAppState extends State<MyApp> {
                       children: [
                         TextButton(
                           onPressed: () async {
-                            if (foodEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.food ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill food TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (foodEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.food ?? false)) {
+                                //showAlertDialog(context, "Please fill food TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("food");
+                                await readyPrint("food");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT FOOD"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (drinkEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.drink ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill drink TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (drinkEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.drink ?? false)) {
+                                //showAlertDialog(context, "Please fill drink TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("drink");
+                                await readyPrint("drink");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT DRINK"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (receiptEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.receipt ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill receipt TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (receiptEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.receipt ?? false)) {
+                                //showAlertDialog(context, "Please fill receipt TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("receipt");
+                                await readyPrint("receipt");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT RECEIPT"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (foodEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.food ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill food TextField");
-                            } else if (drinkEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.drink ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill drink TextField");
-                            } else if (receiptEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.receipt ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill receipt TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (foodEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.food ?? false)) {
+                                //showAlertDialog(context, "Please fill food TextField");
+                              } else if (drinkEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.drink ?? false)) {
+                                //showAlertDialog(context, "Please fill drink TextField");
+                              } else if (receiptEditingController
+                                      .text.isEmpty &&
+                                  pairedDevice.any((e) => e.receipt ?? false)) {
+                                //showAlertDialog(context, "Please fill receipt TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("food");
-                              await readyPrint("drink");
-                              await readyPrint("receipt");
+                                await readyPrint("receipt");
+                                await Future.delayed(
+                                    const Duration(seconds: 4));
+                                await readyPrint("food");
+                                await readyPrint("drink");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT ALL"),
