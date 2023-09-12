@@ -86,6 +86,10 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 disconnectPanda(address, result);
                 break;
             }
+            case "clearPanda": {
+                clearPanda(result);
+                break;
+            }
 
             default:
                 result.notImplemented();
@@ -250,6 +254,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             pandaPointers.remove(address);
         }
 
+        result.success(true);
+    }
+
+    private void clearPanda(@NonNull Result result) {
+        pandaPointers.clear();
         result.success(true);
     }
 

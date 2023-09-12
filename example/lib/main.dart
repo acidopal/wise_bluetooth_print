@@ -58,6 +58,7 @@ class _MyAppState extends State<MyApp> {
     List<PairedDevice> devices = <PairedDevice>[];
 
     try {
+      await WiseBluetoothPrint.clearPanda();
       devices = await WiseBluetoothPrint.getPairedDevices();
     } on PlatformException {
       devices = <PairedDevice>[];
