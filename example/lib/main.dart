@@ -119,16 +119,6 @@ class _MyAppState extends State<MyApp> {
                                   value = await WiseBluetoothPrint
                                       .disconnectPanda();
 
-                                  /*
-                                  if (isPanda) {
-                                    value = await WiseBluetoothPrint
-                                        .disconnectPanda();
-                                  } else {
-                                    value = await WiseBluetoothPrint
-                                        .disconnectBluePrint();
-                                  }
-                                  */
-
                                   if (value) {
                                     setState(() {
                                       pairedDevice.removeWhere((e) =>
@@ -150,11 +140,11 @@ class _MyAppState extends State<MyApp> {
                                     isLoading = true;
                                   });
 
-                                  String value =
+                                  bool value =
                                       await WiseBluetoothPrint.connectPanda(
                                           hardwareAddress);
 
-                                  if (value == "success") {
+                                  if (value) {
                                     setState(() {
                                       pairedDevice.add(Devices(
                                           hardwareAddress: hardwareAddress));
@@ -172,50 +162,6 @@ class _MyAppState extends State<MyApp> {
 
                                     showAlertDialog(context, value.toString());
                                   }
-
-                                  /*
-                                  if (isPanda) {
-                                    String value =
-                                        await WiseBluetoothPrint.connectPanda(
-                                            hardwareAddress);
-
-                                    if (value == "success") {
-                                      setState(() {
-                                        pairedDevice.add(Devices(
-                                            hardwareAddress: hardwareAddress));
-                                      });
-
-                                      setState(() {
-                                        isLoading = false;
-                                      });
-
-                                      Navigator.of(context).pop();
-                                    } else {
-                                      setState(() {
-                                        isLoading = false;
-                                      });
-
-                                      showAlertDialog(
-                                          context, value.toString());
-                                    }
-                                  } else {
-                                    bool value = await WiseBluetoothPrint
-                                        .connectBluePrint(hardwareAddress);
-
-                                    if (value) {
-                                      setState(() {
-                                        pairedDevice.add(Devices(
-                                            hardwareAddress: hardwareAddress));
-                                      });
-                                    }
-
-                                    setState(() {
-                                      isLoading = false;
-                                    });
-
-                                    Navigator.of(context).pop();
-                                  }
-                                  */
                                 },
                                 child: const Text("Connect"),
                               ),
@@ -243,9 +189,14 @@ class _MyAppState extends State<MyApp> {
           title: const Text("Information"),
           content: Text(content),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close", style: TextStyle(color: Colors.red)),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child:
+                      const Text("Close", style: TextStyle(color: Colors.red)),
+                ),
+              ],
             ),
           ],
         );
@@ -303,33 +254,6 @@ class _MyAppState extends State<MyApp> {
                 }
               });
             });
-
-            /*
-            if (isPanda(getList[i].hardwareAddress ?? "")) {
-              await WiseBluetoothPrint.disconnectPanda().then((result) async {
-                await WiseBluetoothPrint.connectPanda(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value == "success") {
-                    await WiseBluetoothPrint.printPanda(content);
-                  } else {
-                    showAlertDialog(context, value.toString());
-                  }
-                });
-              });
-            } else {
-              await WiseBluetoothPrint.disconnectBluePrint()
-                  .then((result) async {
-                await WiseBluetoothPrint.connectBluePrint(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value) {
-                    await WiseBluetoothPrint.printBluePrint(content);
-                  }
-                });
-              });
-            }
-            */
           } catch (e) {
             showAlertDialog(context, e.toString());
           }
