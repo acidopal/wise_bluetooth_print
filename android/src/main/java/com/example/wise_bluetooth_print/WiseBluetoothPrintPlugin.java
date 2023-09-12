@@ -29,7 +29,6 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
-import java.util.HashMap;
 import java.util.Map.Entry;
 
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {

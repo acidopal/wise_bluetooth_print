@@ -372,91 +372,101 @@ class _MyAppState extends State<MyApp> {
                       children: [
                         TextButton(
                           onPressed: () async {
-                            if (foodEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.food ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill food TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (foodEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.food ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill food TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("food");
+                                await readyPrint("food");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT FOOD"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (drinkEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.drink ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill drink TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (drinkEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.drink ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill drink TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("drink");
+                                await readyPrint("drink");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT DRINK"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (receiptEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.receipt ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill receipt TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (receiptEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.receipt ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill receipt TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("receipt");
+                                await readyPrint("receipt");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT RECEIPT"),
                         ),
                         TextButton(
                           onPressed: () async {
-                            if (foodEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.food ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill food TextField");
-                            } else if (drinkEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.drink ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill drink TextField");
-                            } else if (receiptEditingController.text.isEmpty &&
-                                pairedDevice.any((e) => e.receipt ?? false)) {
-                              showAlertDialog(
-                                  context, "Please fill receipt TextField");
-                            } else {
-                              setState(() {
-                                isPrinting = true;
-                              });
+                            if (!isPrinting) {
+                              if (foodEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.food ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill food TextField");
+                              } else if (drinkEditingController.text.isEmpty &&
+                                  pairedDevice.any((e) => e.drink ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill drink TextField");
+                              } else if (receiptEditingController
+                                      .text.isEmpty &&
+                                  pairedDevice.any((e) => e.receipt ?? false)) {
+                                showAlertDialog(
+                                    context, "Please fill receipt TextField");
+                              } else {
+                                setState(() {
+                                  isPrinting = true;
+                                });
 
-                              await readyPrint("receipt");
-                              await Future.delayed(const Duration(seconds: 4));
-                              await readyPrint("food");
-                              await readyPrint("drink");
+                                await readyPrint("receipt");
+                                await Future.delayed(
+                                    const Duration(seconds: 4));
+                                await readyPrint("food");
+                                await readyPrint("drink");
 
-                              setState(() {
-                                isPrinting = false;
-                              });
+                                setState(() {
+                                  isPrinting = false;
+                                });
+                              }
                             }
                           },
                           child: const Text("PRINT ALL"),
