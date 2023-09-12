@@ -171,8 +171,6 @@ class _MyAppState extends State<MyApp> {
                                     setState(() {
                                       isLoading = false;
                                     });
-
-                                    showAlertDialog(context, value.toString());
                                   }
 
                                   /*
@@ -237,26 +235,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future<void> showAlertDialog(BuildContext context, String content) async {
-    await showDialog(
-      context: context,
-      builder: (builder) => StatefulBuilder(builder: (context, setState) {
-        return AlertDialog(
-          title: const Text("Information"),
-          content: Text(content),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      }),
-    ).whenComplete(() {
-      setState(() {});
-    });
-  }
-
   bool isPanda(String hardwareAddress) {
     return _devices.any((e) => e.hardwareAddress == hardwareAddress)
         ? (_devices
@@ -306,12 +284,10 @@ class _MyAppState extends State<MyApp> {
                 content,
                 imageUrl: (type == "receipt" && image != null) ? image : null,
               );
-            } else {
-              showAlertDialog(context, value.toString());
             }
           }
         } catch (e) {
-          showAlertDialog(context, e.toString());
+          print(e.toString());
         }
       }
     }
@@ -342,8 +318,7 @@ class _MyAppState extends State<MyApp> {
                             if (!isPrinting) {
                               if (foodEditingController.text.isEmpty &&
                                   pairedDevice.any((e) => e.food ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill food TextField");
+                                //showAlertDialog(context, "Please fill food TextField");
                               } else {
                                 setState(() {
                                   isPrinting = true;
@@ -364,8 +339,7 @@ class _MyAppState extends State<MyApp> {
                             if (!isPrinting) {
                               if (drinkEditingController.text.isEmpty &&
                                   pairedDevice.any((e) => e.drink ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill drink TextField");
+                                //showAlertDialog(context, "Please fill drink TextField");
                               } else {
                                 setState(() {
                                   isPrinting = true;
@@ -386,8 +360,7 @@ class _MyAppState extends State<MyApp> {
                             if (!isPrinting) {
                               if (receiptEditingController.text.isEmpty &&
                                   pairedDevice.any((e) => e.receipt ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill receipt TextField");
+                                //showAlertDialog(context, "Please fill receipt TextField");
                               } else {
                                 setState(() {
                                   isPrinting = true;
@@ -408,17 +381,14 @@ class _MyAppState extends State<MyApp> {
                             if (!isPrinting) {
                               if (foodEditingController.text.isEmpty &&
                                   pairedDevice.any((e) => e.food ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill food TextField");
+                                //showAlertDialog(context, "Please fill food TextField");
                               } else if (drinkEditingController.text.isEmpty &&
                                   pairedDevice.any((e) => e.drink ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill drink TextField");
+                                //showAlertDialog(context, "Please fill drink TextField");
                               } else if (receiptEditingController
                                       .text.isEmpty &&
                                   pairedDevice.any((e) => e.receipt ?? false)) {
-                                showAlertDialog(
-                                    context, "Please fill receipt TextField");
+                                //showAlertDialog(context, "Please fill receipt TextField");
                               } else {
                                 setState(() {
                                   isPrinting = true;
