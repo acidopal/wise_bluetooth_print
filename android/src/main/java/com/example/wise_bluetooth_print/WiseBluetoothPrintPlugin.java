@@ -193,85 +193,100 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         try {
             if (pandaPointers.containsKey(address)) {
                 pandaPointers.remove(address);
+            }
 
-                Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-                pandaPointers.put(address, pandaPointer);
-                result.success(true);
+            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            pandaPointers.put(address, pandaPointer);
+
+            int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
+            boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
+            boolean isOffline = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_OFFLINE(printerStatus);
+
+            System.out.println("printerStatus: " + printerStatus);
+            System.out.println("isOutOfPaper: " + isOutOfPaper);
+            System.out.println("isOffline: " + isOffline);
+
+            if (isOutOfPaper || isOffline) {
+                result.success(false);
             } else {
-                Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-                pandaPointers.put(address, pandaPointer);
                 result.success(true);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            result.success(false);
+            // result.success(false);
+            result.error("EXCEPTION_ERROR", "An exception occurred: " + e.getMessage(), null);
         }
     }
 
     private void printPanda(String address, String content, String imageUrl, Result result) {
-        if (pandaPointers.containsKey(address)) {
-            Pointer pandaPointer = pandaPointers.get(address);
+        if (!pandaPointers.containsKey(address)) {
+            result.success(false);
+            return;
+        }
 
-            if (pandaPointer != null) {
-                int resultPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_ResetPrinter(pandaPointer);
+        Pointer pandaPointer = pandaPointers.get(address);
+        if (pandaPointer == null) {
+            result.success(false);
+            return;
+        }
 
-                if (resultPointer == 0) {
-                    result.success(false);
-                } else {
+        int resultPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_ResetPrinter(pandaPointer);
+        int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
+        boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
+        boolean isOffline = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_OFFLINE(printerStatus);
 
-                    new Thread() {
-                        @Override
-                        public void run() {
+        System.out.println("printerStatus: " + printerStatus);
+        System.out.println("isOutOfPaper: " + isOutOfPaper);
+        System.out.println("isOffline: " + isOffline);
 
-                            try {
-                                if (imageUrl != null) {
-                                    try {
-                                        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
-                                        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-                                        if (bitmap != null) {
-                                            int width = bitmap.getWidth();
-                                            int height = bitmap.getHeight();
-                                            int page_width = 384;
-                                            int dstw = width;
-                                            int dsth = height;
-                                            if (dstw > page_width) {
-                                                dstw = page_width;
-                                                dsth = (int) (dstw * ((double) height / width));
-                                            }
-                                            printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
-                                                    printerlibs_caysnpos.PosAlignment_HCenter);
-                                            printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
-                                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth,
-                                                            bitmap,
-                                                            0);
-                                            printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
-                                        }
-                                    } catch (Exception r) {
-                                        r.printStackTrace();
-                                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
-                                                "FAILED PRINTING IMAGE\nerrormessage : " + r.getMessage());
-                                    }
-                                }
+        if (isOutOfPaper || isOffline) {
+            result.success(false);
+            return;
+        }
 
-                                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
-                                        printerlibs_caysnpos.PosAlignment_Left);
-                                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
+        new Thread(() -> {
+            try {
+                if (imageUrl != null) {
+                    try {
+                        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
 
-                                result.success(true);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                result.success(false);
+                        if (bitmap != null) {
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            int page_width = 384;
+                            int dstw = width;
+                            int dsth = height;
+                            if (dstw > page_width) {    
+                                dstw = page_width;
+                                dsth = (int) (dstw * ((double) height / width));
                             }
-                        }
-                    }.start();
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                                    printerlibs_caysnpos.PosAlignment_HCenter);
+                            printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
+                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth,
+                                            bitmap,
+                                            0);
+                            printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
+                        }                        
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
+                                "FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                    }
                 }
-            } else {
+
+                printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
+                        printerlibs_caysnpos.PosAlignment_Left);
+                printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
+                result.success(true);
+            } catch (Exception e) {
+                e.printStackTrace();
                 result.success(false);
             }
-        } else {
-            result.success(false);
-        }
+        }).start();
     }
+
 
     private void disconnectPanda(String address, @NonNull Result result) {
         if (pandaPointers.containsKey(address)) {
