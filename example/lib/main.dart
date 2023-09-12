@@ -269,83 +269,49 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> readyPrint(String type) async {
-    if (pairedDevice.any((e) =>
+    final selectedDevices = pairedDevice.where((e) =>
         (type == "food" && (e.food ?? false)) ||
         (type == "drink" && (e.drink ?? false)) ||
-        (type == "receipt" && (e.receipt ?? false)))) {
-      List<Devices> getList = pairedDevice
-          .where((e) =>
-              (type == "food" && (e.food ?? false)) ||
-              (type == "drink" && (e.drink ?? false)) ||
-              (type == "receipt" && (e.receipt ?? false)))
-          .toList();
+        (type == "receipt" && (e.receipt ?? false)));
 
-      String content = type == "food"
-          ? foodEditingController.text
-          : (type == "drink"
-              ? drinkEditingController.text
-              : receiptEditingController.text);
+    final content = type == "food"
+        ? foodEditingController.text
+        : (type == "drink"
+            ? drinkEditingController.text
+            : receiptEditingController.text);
 
-      for (var i = 0; i < getList.length; i++) {
-        if (_devices
-            .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
-          try {
-            await WiseBluetoothPrint.printPanda(
-                    getList[i].hardwareAddress ?? "", content,
-                    imageUrl:
-                        (type == "receipt" && image != null) ? image : null)
-                .then((result) async {
-              print("Is print $result");
-              if (result == false) {
-                await WiseBluetoothPrint.disconnectPanda(
-                        getList[i].hardwareAddress ?? "")
-                    .then((error) async {
-                  await WiseBluetoothPrint.connectPanda(
-                          getList[i].hardwareAddress ?? "")
-                      .then((value) async {
-                    if (value == "success") {
-                      await WiseBluetoothPrint.printPanda(
-                          getList[i].hardwareAddress ?? "", content,
-                          imageUrl: (type == "receipt" && image != null)
-                              ? image
-                              : null);
-                    } else {
-                      showAlertDialog(context, value.toString());
-                    }
-                  });
-                });
-              }
-            });
+    for (var device in selectedDevices) {
+      if (_devices.any((e) => e.hardwareAddress == device.hardwareAddress)) {
+        try {
+          final startTime = DateTime.now();
+          final result = await WiseBluetoothPrint.printPanda(
+            device.hardwareAddress ?? "",
+            content,
+            imageUrl: (type == "receipt" && image != null) ? image : null,
+          );
+          final endTime = DateTime.now();
+          final duration = endTime.difference(startTime);
 
-            /*
-            if (isPanda(getList[i].hardwareAddress ?? "")) {
-              await WiseBluetoothPrint.disconnectPanda().then((result) async {
-                await WiseBluetoothPrint.connectPanda(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value == "success") {
-                    await WiseBluetoothPrint.printPanda(content);
-                  } else {
-                    showAlertDialog(context, value.toString());
-                  }
-                });
-              });
+          print("Is print $result ${duration.inMilliseconds}");
+
+          if (duration.inMilliseconds < 100) {
+            await WiseBluetoothPrint.disconnectPanda(
+                device.hardwareAddress ?? "");
+            final value = await WiseBluetoothPrint.connectPanda(
+                device.hardwareAddress ?? "");
+
+            if (value == "success") {
+              await WiseBluetoothPrint.printPanda(
+                device.hardwareAddress ?? "",
+                content,
+                imageUrl: (type == "receipt" && image != null) ? image : null,
+              );
             } else {
-              await WiseBluetoothPrint.disconnectBluePrint()
-                  .then((result) async {
-                await WiseBluetoothPrint.connectBluePrint(
-                        getList[i].hardwareAddress ?? "")
-                    .then((value) async {
-                  if (value) {
-                    await WiseBluetoothPrint.printBluePrint(content);
-                  }
-                });
-              });
+              showAlertDialog(context, value.toString());
             }
-            */
-          } catch (e) {
-            showAlertDialog(context, e.toString());
           }
+        } catch (e) {
+          showAlertDialog(context, e.toString());
         }
       }
     }
