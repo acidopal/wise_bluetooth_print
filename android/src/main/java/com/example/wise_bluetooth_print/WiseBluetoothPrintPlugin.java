@@ -205,13 +205,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void printPanda(String address, String content, String imageUrl, Result result) {
-        new Thread() {
-            @Override
-            public void run() {
-                if (pandaPointers.containsKey(address)) {
-                    Pointer pandaPointer = pandaPointers.get(address);
+        if (pandaPointers.containsKey(address)) {
+            Pointer pandaPointer = pandaPointers.get(address);
 
-                    if (pandaPointer != null) {
+            if (pandaPointer != null) {
+                new Thread() {
+                    @Override
+                    public void run() {
+
                         try {
                             if (imageUrl != null) {
                                 try {
@@ -250,14 +251,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                             e.printStackTrace();
                             result.success(false);
                         }
-                    } else {
-                        result.success(false);
                     }
-                } else {
-                    result.success(false);
-                }
+                }.start();
+            } else {
+                result.success(false);
             }
-        }.start();
+        } else {
+            result.success(false);
+        }
     }
 
     private void disconnectPanda(String address, @NonNull Result result) {

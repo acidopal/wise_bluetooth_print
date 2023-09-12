@@ -294,7 +294,7 @@ class _MyAppState extends State<MyApp> {
 
           print("Is print $result ${duration.inMilliseconds}");
 
-          if (duration.inMilliseconds < 100) {
+          if (result == false) {
             await WiseBluetoothPrint.disconnectPanda(
                 device.hardwareAddress ?? "");
             final value = await WiseBluetoothPrint.connectPanda(
