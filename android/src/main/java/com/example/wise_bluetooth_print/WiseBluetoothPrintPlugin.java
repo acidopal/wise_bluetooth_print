@@ -190,9 +190,13 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     private void connectPanda(String address, Result result) {
         try {
-            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            pandaPointers.put(address, pandaPointer);
-            result.success("success");
+            if (pandaPointers.containsKey(address)) {
+                result.success("success");
+            } else {
+                Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+                pandaPointers.put(address, pandaPointer);
+                result.success("success");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             result.success(e.toString());
@@ -256,14 +260,18 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void disconnectPanda(String address, @NonNull Result result) {
-        Pointer pandaPointer = pandaPointers.get(address);
+        if (pandaPointers.containsKey(address)) {
+            Pointer pandaPointer = pandaPointers.get(address);
 
-        if (pandaPointer != null) {
-            printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
-            pandaPointers.remove(address);
+            if (pandaPointer != null) {
+                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+                pandaPointers.remove(address);
+            }
+
+            result.success(true);
+        } else {
+            result.success(true);
         }
-
-        result.success(true);
     }
 
     private void clearPanda(@NonNull Result result) {
