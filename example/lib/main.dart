@@ -290,8 +290,6 @@ class _MyAppState extends State<MyApp> {
         if (_devices
             .any((e) => e.hardwareAddress == getList[i].hardwareAddress)) {
           try {
-            //await Future.delayed(const Duration(milliseconds: 500));
-
             await WiseBluetoothPrint.printPanda(
                     getList[i].hardwareAddress ?? "", content,
                     imageUrl:
@@ -452,6 +450,7 @@ class _MyAppState extends State<MyApp> {
                               });
 
                               await readyPrint("receipt");
+                              await Future.delayed(const Duration(seconds: 1));
                               await readyPrint("food");
                               await readyPrint("drink");
 
