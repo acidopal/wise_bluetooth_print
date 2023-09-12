@@ -258,6 +258,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void clearPanda(@NonNull Result result) {
+        for (Entry<String, Pointer> entry : pandaPointers.entrySet()) {
+            Pointer pandaPointer = entry.getValue();
+
+            if (pandaPointer != null) {
+                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+            }
+        }
+
         pandaPointers.clear();
         result.success(true);
     }
