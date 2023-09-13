@@ -288,14 +288,7 @@ class _MyAppState extends State<MyApp> {
               }
             }
           } else {
-            await WiseBluetoothPrint.disconnectBluePrint();
-            final value = await WiseBluetoothPrint.connectBluePrint(
-                device.hardwareAddress ?? "", device.index ?? 0);
-
-            if (value) {
-              await WiseBluetoothPrint.printBluePrint(
-                  content, device.index ?? 0);
-            }
+            await WiseBluetoothPrint.printBluePrint(content, device.index ?? 0);
           }
         } catch (e) {
           print(e.toString());
