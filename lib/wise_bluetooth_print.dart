@@ -73,9 +73,4 @@ class WiseBluetoothPrint {
     var ret = await _channel.invokeMethod('disconnectPanda', params);
     return ret;
   }
-
-  static Future<bool> clearPanda() async {
-    var ret = await _channel.invokeMethod('clearPanda');
-    return ret;
-  }
 }
