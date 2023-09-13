@@ -26,6 +26,12 @@ apply plugin: 'kotlin-kapt'
 android {
     compileSdkVersion 31
 
+    sourceSets {
+        main {         
+            jniLibs.srcDirs = ['src/main/jnilibs']          
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
