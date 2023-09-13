@@ -36,7 +36,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     private MethodChannel channel;
     private Context context;
 
-    private HashMap<String, Pointer> pandaPointers = new HashMap<>();
+    private Pointer pandaPointer;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -85,10 +85,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             case "disconnectPanda": {
                 String address = call.argument("address");
                 disconnectPanda(address, result);
-                break;
-            }
-            case "clearPanda": {
-                clearPanda(result);
                 break;
             }
 
@@ -191,12 +187,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     private void connectPanda(String address, Result result) {
         try {
-            if (pandaPointers.containsKey(address)) {
-                pandaPointers.remove(address);
-            }
 
-            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            pandaPointers.put(address, pandaPointer);
+            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
 
             int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
             boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
@@ -219,17 +211,6 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void printPanda(String address, String content, String imageUrl, Result result) {
-        if (!pandaPointers.containsKey(address)) {
-            result.success(false);
-            return;
-        }
-
-        Pointer pandaPointer = pandaPointers.get(address);
-        if (pandaPointer == null) {
-            result.success(false);
-            return;
-        }
-
         int resultPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_ResetPrinter(pandaPointer);
         int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
         boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
@@ -257,7 +238,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                             int page_width = 384;
                             int dstw = width;
                             int dsth = height;
-                            if (dstw > page_width) {    
+                            if (dstw > page_width) {
                                 dstw = page_width;
                                 dsth = (int) (dstw * ((double) height / width));
                             }
@@ -268,7 +249,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                                             bitmap,
                                             0);
                             printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
-                        }                        
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                         printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
@@ -287,32 +268,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }).start();
     }
 
-
     private void disconnectPanda(String address, @NonNull Result result) {
-        if (pandaPointers.containsKey(address)) {
-            Pointer pandaPointer = pandaPointers.get(address);
-
-            if (pandaPointer != null) {
-                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
-                pandaPointers.remove(address);
-            }
-
-            result.success(true);
-        } else {
-            result.success(true);
-        }
-    }
-
-    private void clearPanda(@NonNull Result result) {
-        for (Entry<String, Pointer> entry : pandaPointers.entrySet()) {
-            Pointer pandaPointer = entry.getValue();
-
-            if (pandaPointer != null) {
-                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
-            }
-        }
-
-        pandaPointers.clear();
+        printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
         result.success(true);
     }
 
