@@ -121,21 +121,35 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void connectBluePrint(String address, @NonNull Result result) {
-        System.out.println("Address");
-        System.out.println(address);
-        new GPDeviceConnFactoryManager.Build()
-                .setId(0)
-                .setContext(context)
-                .setName("")
-                .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
-                .setMacAddress(address)
-                .build();
-
-        GPThreadPool threadPool = GPThreadPool.getInstantiation();
-        threadPool.addTask(() -> {
+        GPThreadPool.getInstantiation().addTask(() -> {
             try {
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
-                result.success(true);
+                GPDeviceConnFactoryManager deviceConnFactoryManager = new GPDeviceConnFactoryManager.Build()
+                        .setId(0)
+                        .setContext(context)
+                        .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
+                        .setMacAddress(address)
+                        .build();
+
+                if (deviceConnFactoryManager.openPort()) {
+                    EscCommand esc = new EscCommand();
+                    esc.addInitializePrinter();
+                    esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
+                    esc.addText(content + "\n");
+                    esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                    esc.addText("CENTER TEXT\n");
+                    esc.addSelectJustification(EscCommand.JUSTIFICATION.RIGHT);
+                    esc.addText("RIGHT TEXT\n\n\n");
+
+                    esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                    esc.addText("PRINTING IMAGE\n");
+
+                    deviceConnFactoryManager.sendDataImmediately(esc.getCommand());
+                    System.out.println("Print Berhasil");
+                    result.success(true);
+                } else {
+                    System.out.println("Print Gagal");
+                    result.success(false);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 result.success(false);
