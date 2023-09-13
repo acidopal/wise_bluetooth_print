@@ -110,23 +110,32 @@ class _MyAppState extends State<MyApp> {
                         isConnect
                             ? TextButton(
                                 onPressed: () async {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-
-                                  bool? value = await WiseBluetoothPrint
-                                      .disconnectBluePrint();
-
-                                  if (value) {
+                                  if (pairedDevice.any((e) =>
+                                      e.hardwareAddress == hardwareAddress)) {
                                     setState(() {
-                                      pairedDevice.removeWhere((e) =>
-                                          e.hardwareAddress == hardwareAddress);
+                                      isLoading = true;
+                                    });
+
+                                    bool? value = await WiseBluetoothPrint
+                                        .disconnectBluePrint(pairedDevice
+                                                .firstWhere((e) =>
+                                                    e.hardwareAddress ==
+                                                    hardwareAddress)
+                                                .index ??
+                                            0);
+
+                                    if (value) {
+                                      setState(() {
+                                        pairedDevice.removeWhere((e) =>
+                                            e.hardwareAddress ==
+                                            hardwareAddress);
+                                      });
+                                    }
+
+                                    setState(() {
+                                      isLoading = false;
                                     });
                                   }
-
-                                  setState(() {
-                                    isLoading = false;
-                                  });
 
                                   Navigator.of(context).pop();
                                 },

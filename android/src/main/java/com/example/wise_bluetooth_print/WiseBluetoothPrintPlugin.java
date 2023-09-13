@@ -69,7 +69,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "disconnectBluePrint": {
-                disconnectBluePrint(result);
+                int indexPrint = call.argument("index_print");
+                disconnectBluePrint(indexPrint, result);
                 break;
             }
             case "connectPanda": {
@@ -183,8 +184,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         }.start();
     }
 
-    private void disconnectBluePrint(@NonNull Result result) {
-        GPDeviceConnFactoryManager.closeAllPort();
+    private void disconnectBluePrint(int indexPrint, @NonNull Result result) {
+        GPDeviceConnFactoryManager.closePort(indexPrint);
         result.success(true);
     }
 
