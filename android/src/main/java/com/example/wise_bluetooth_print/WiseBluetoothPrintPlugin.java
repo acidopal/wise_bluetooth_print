@@ -58,12 +58,14 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
             case "connectBluePrint": {
                 String address = call.argument("address");
-                connectBluePrint(address, result);
+                int indexPrint = call.argument("index_print");
+                connectBluePrint(address, indexPrint, result);
                 break;
             }
             case "printBluePrint": {
                 String content = call.argument("content");
-                printBluePrint(content, result);
+                int indexPrint = call.argument("index_print");
+                connectBluePrint(content, indexPrint, result);
                 break;
             }
             case "disconnectBluePrint": {
