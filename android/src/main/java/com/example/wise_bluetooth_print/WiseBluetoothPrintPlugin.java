@@ -19,6 +19,8 @@ import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
@@ -34,7 +36,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     private MethodChannel channel;
     private Context context;
 
-    private Pointer pandaPointer;
+    private HashMap<String, Pointer> pandaPointers = new HashMap<>();
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -74,13 +76,19 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 break;
             }
             case "printPanda": {
+                String address = call.argument("address");
                 String content = call.argument("content");
                 String imageUrl = call.argument("imageUrl");
-                printPanda(content, imageUrl, result);
+                printPanda(address, content, imageUrl, result);
                 break;
             }
             case "disconnectPanda": {
-                disconnectPanda(result);
+                String address = call.argument("address");
+                disconnectPanda(address, result);
+                break;
+            }
+            case "clearPanda": {
+                clearPanda(result);
                 break;
             }
 
@@ -183,38 +191,84 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     private void connectPanda(String address, Result result) {
         try {
-            pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
-            result.success(true);
+            if (pandaPointers.containsKey(address)) {
+                pandaPointers.remove(address);
+            }
+
+            Pointer pandaPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_OpenBT2ByConnectA(address);
+            pandaPointers.put(address, pandaPointer);
+
+            int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
+            boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
+            boolean isOffline = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_OFFLINE(printerStatus);
+
+            System.out.println("printerStatus: " + printerStatus);
+            System.out.println("isOutOfPaper: " + isOutOfPaper);
+            System.out.println("isOffline: " + isOffline);
+
+            if (isOutOfPaper || isOffline) {
+                result.success(false);
+            } else {
+                result.success(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            result.success(false);
+            // result.success(false);
+            result.error("EXCEPTION_ERROR", "An exception occurred: " + e.getMessage(), null);
         }
     }
 
-    private void printPanda(String content, String imageUrl, Result result) {
-        new Thread() {
-            @Override
-            public void run() {
+    private void printPanda(String address, String content, String imageUrl, Result result) {
+        if (!pandaPointers.containsKey(address)) {
+            result.success(false);
+            return;
+        }
+
+        Pointer pandaPointer = pandaPointers.get(address);
+        if (pandaPointer == null) {
+            result.success(false);
+            return;
+        }
+
+        int resultPointer = printerlibs_caysnpos.INSTANCE.CaysnPos_ResetPrinter(pandaPointer);
+        int printerStatus = printerlibs_caysnpos.INSTANCE.CaysnPos_QueryPrinterStatus(pandaPointer, 3000);
+        boolean isOutOfPaper = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_NOPAPER(printerStatus);
+        boolean isOffline = printerlibs_caysnpos.PL_PRINTERSTATUS_Helper.PL_PRINTERSTATUS_OFFLINE(printerStatus);
+
+        System.out.println("printerStatus: " + printerStatus);
+        System.out.println("isOutOfPaper: " + isOutOfPaper);
+        System.out.println("isOffline: " + isOffline);
+
+        if (isOutOfPaper || isOffline) {
+            result.success(false);
+            return;
+        }
+
+        new Thread(() -> {
+            try {
                 if (imageUrl != null) {
                     try {
                         byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
                         Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+
                         if (bitmap != null) {
                             int width = bitmap.getWidth();
                             int height = bitmap.getHeight();
                             int page_width = 384;
                             int dstw = width;
                             int dsth = height;
-                            if (dstw > page_width) {
+                            if (dstw > page_width) {    
                                 dstw = page_width;
                                 dsth = (int) (dstw * ((double) height / width));
                             }
                             printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
                                     printerlibs_caysnpos.PosAlignment_HCenter);
                             printerlibs_caysnpos.CaysnPos_PrintRasterImage_Helper
-                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth, bitmap, 0);
+                                    .CaysnPos_PrintRasterImageFromBitmap(pandaPointer, dstw, dsth,
+                                            bitmap,
+                                            0);
                             printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, "\n");
-                        }
+                        }                        
                     } catch (Exception e) {
                         e.printStackTrace();
                         printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer,
@@ -225,14 +279,40 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 printerlibs_caysnpos.INSTANCE.CaysnPos_SetAlignment(pandaPointer,
                         printerlibs_caysnpos.PosAlignment_Left);
                 printerlibs_caysnpos.INSTANCE.CaysnPos_PrintTextA(pandaPointer, content + "\n\n");
-
                 result.success(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.success(false);
             }
-        }.start();
+        }).start();
     }
 
-    private void disconnectPanda(@NonNull Result result) {
-        printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+
+    private void disconnectPanda(String address, @NonNull Result result) {
+        if (pandaPointers.containsKey(address)) {
+            Pointer pandaPointer = pandaPointers.get(address);
+
+            if (pandaPointer != null) {
+                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+                pandaPointers.remove(address);
+            }
+
+            result.success(true);
+        } else {
+            result.success(true);
+        }
+    }
+
+    private void clearPanda(@NonNull Result result) {
+        for (Entry<String, Pointer> entry : pandaPointers.entrySet()) {
+            Pointer pandaPointer = entry.getValue();
+
+            if (pandaPointer != null) {
+                printerlibs_caysnpos.INSTANCE.CaysnPos_Close(pandaPointer);
+            }
+        }
+
+        pandaPointers.clear();
         result.success(true);
     }
 
