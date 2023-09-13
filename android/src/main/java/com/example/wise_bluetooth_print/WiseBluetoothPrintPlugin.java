@@ -120,11 +120,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         result.success(deviceInfoList);
     }
 
-    private void connectBluePrint(String address, @NonNull Result result) {
+    private void connectBluePrint(String address, int indexPrint, @NonNull Result result) {
         System.out.println("Address");
         System.out.println(address);
         new GPDeviceConnFactoryManager.Build()
-                .setId(0)
+                .setId(indexPrint)
                 .setContext(context)
                 .setName("")
                 .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
@@ -134,7 +134,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         GPThreadPool threadPool = GPThreadPool.getInstantiation();
         threadPool.addTask(() -> {
             try {
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].openPort();
+                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].openPort();
                 result.success(true);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -143,7 +143,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         });
     }
 
-    private void printBluePrint(String content, Result result) {
+    private void printBluePrint(String content, int indexPrint, Result result) {
         new Thread() {
             @Override
             public void run() {
@@ -174,7 +174,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                     esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
                 }
 
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[0].sendDataImmediately(esc.getCommand());
+                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint]
+                        .sendDataImmediately(esc.getCommand());
                 result.success(true);
             }
         }.start();

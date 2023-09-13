@@ -63,7 +63,7 @@ public class GPDeviceConnFactoryManager {
     /**
      * ESC查询打印机实时状态指令
      */
-    private byte[] esc = {0x10, 0x04, 0x02};
+    private byte[] esc = { 0x10, 0x04, 0x02 };
 
     /**
      * ESC查询打印机实时状态 缺纸状态
@@ -83,7 +83,7 @@ public class GPDeviceConnFactoryManager {
     /**
      * TSC查询打印机状态指令
      */
-    private byte[] tsc = {0x1b, '!', '?'};
+    private byte[] tsc = { 0x1b, '!', '?' };
 
     /**
      * TSC指令查询打印机实时状态 打印机缺纸状态
@@ -119,13 +119,13 @@ public class GPDeviceConnFactoryManager {
     private PrinterReader reader;
 
     public enum CONN_METHOD {
-        //蓝牙连接
+        // 蓝牙连接
         BLUETOOTH("BLUETOOTH"),
-        //USB连接
+        // USB连接
         USB("USB"),
-        //wifi连接
+        // wifi连接
         WIFI("WIFI"),
-        //串口连接
+        // 串口连接
         SERIAL_PORT("SERIAL_PORT");
 
         private String name;
@@ -178,7 +178,7 @@ public class GPDeviceConnFactoryManager {
             default:
                 break;
         }
-        //端口打开成功后，检查连接打印机所使用的打印机指令ESC、TSC
+        // 端口打开成功后，检查连接打印机所使用的打印机指令ESC、TSC
         if (isOpenPort) {
             queryCommand();
         } else {
@@ -190,86 +190,11 @@ public class GPDeviceConnFactoryManager {
      * 查询当前连接打印机所使用打印机指令（ESC（EscCommand.java）、TSC（LabelCommand.java））
      */
     private void queryCommand() {
-        //开启读取打印机返回数据线程
+        // 开启读取打印机返回数据线程
         reader = new PrinterReader();
         reader.start();
 
-        if (mHandler == null) {
-            mHandler = new Handler(reader.getLooper()) {
-                @Override
-                public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                        case READ_DATA:
-                            int cnt = msg.getData().getInt(READ_DATA_CNT);
-                            byte[] buffer = msg.getData().getByteArray(READ_BUFFER_ARRAY);
-                            //这里只对查询状态返回值做处理，其它返回值可参考编程手册来解析
-                            if (buffer == null) {
-                                return;
-                            }
-                            int result = judgeResponseType(buffer[0]);
-                            String status = mName; //String.format(mContext.getString(R.string.str_printer_conn_normal), mName);
-                            if (sendCommand == esc) {
-                                //设置当前打印机模式为ESC模式
-                                if (currentPrinterCommand == null) {
-                                    currentPrinterCommand = GPPrinterCommand.ESC;
-                                    sendStateBroadcast(CONN_STATE_CONNECTED);
-                                } else {//查询打印机状态
-                                    if (result == 0) {//打印机状态查询
-                                        Intent intent = new Intent(ACTION_QUERY_PRINTER_STATE);
-                                        intent.putExtra(DEVICE_ID, id);
-                                        mContext.sendBroadcast(intent);
-                                    } else if (result == 1) {//查询打印机实时状态
-                                        boolean hasProblem = false;
-                                        if ((buffer[0] & ESC_STATE_PAPER_ERR) > 0) {
-                                            hasProblem = true;
-                                            status += " - " + "Runout of paper";
-                                        }
-                                        if ((buffer[0] & ESC_STATE_COVER_OPEN) > 0) {
-                                            hasProblem = true;
-                                            status += " - " + "Open cover printer";
-                                        }
-                                        if ((buffer[0] & ESC_STATE_ERR_OCCURS) > 0) {
-                                            hasProblem = true;
-                                            status += " - " + "Printer error";
-                                        }
-                                        System.out.println("State: " + status);
-                                        if (hasProblem)
-                                            GPUtils.toast(mContext, status);
-                                    }
-                                }
-                            } else if (sendCommand == tsc) {
-                                //设置当前打印机模式为TSC模式
-                                if (currentPrinterCommand == null) {
-                                    currentPrinterCommand = GPPrinterCommand.TSC;
-                                    sendStateBroadcast(CONN_STATE_CONNECTED);
-                                } else {
-                                    if (cnt == 1) {//查询打印机实时状态
-                                        if ((buffer[0] & TSC_STATE_PAPER_ERR) > 0) {//缺纸
-                                            status += " " + "Run out paper";
-                                        }
-                                        if ((buffer[0] & TSC_STATE_COVER_OPEN) > 0) {//开盖
-                                            status += " " + "Open printer cover";
-                                        }
-                                        if ((buffer[0] & TSC_STATE_ERR_OCCURS) > 0) {//打印机报错
-                                            status += " " + "Printer error";
-                                        }
-                                        System.out.println("State: " + status);
-                                        GPUtils.toast(mContext, status);
-                                    } else {//打印机状态查询
-                                        Intent intent = new Intent(ACTION_QUERY_PRINTER_STATE);
-                                        intent.putExtra(DEVICE_ID, id);
-                                        mContext.sendBroadcast(intent);
-                                    }
-                                }
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            };
-        }
-        //查询打印机所使用指令
+        // 查询打印机所使用指令
         queryPrinterCommand();
     }
 
@@ -339,8 +264,7 @@ public class GPDeviceConnFactoryManager {
                 currentPrinterCommand = null;
             }
             sendStateBroadcast(CONN_STATE_DISCONNECT);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -372,8 +296,7 @@ public class GPDeviceConnFactoryManager {
                     deviceConnFactoryManagers[deviceConnFactoryManager.id] = null;
                 }
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -473,7 +396,8 @@ public class GPDeviceConnFactoryManager {
             return false;
         }
         try {
-            //Log.e(TAG, "data -> " + new String(com.gprinter.utils.Utils.convertVectorByteTobytes(data), "gb2312"));
+            // Log.e(TAG, "data -> " + new
+            // String(com.gprinter.utils.Utils.convertVectorByteTobytes(data), "gb2312"));
             this.mPort.writeDataImmediately(data, 0, data.size());
             return true;
         } catch (IOException e) {
@@ -493,29 +417,30 @@ public class GPDeviceConnFactoryManager {
         GPThreadPool.getInstantiation().addTask(new Runnable() {
             @Override
             public void run() {
-                //发送ESC查询打印机状态指令
+                // 发送ESC查询打印机状态指令
                 sendCommand = esc;
                 Vector<Byte> data = new Vector<>(esc.length);
                 for (int i = 0; i < esc.length; i++) {
                     data.add(esc[i]);
                 }
                 sendDataImmediately(data);
-                //开启计时器，隔2000毫秒没有没返回值时发送TSC查询打印机状态指令
+                // 开启计时器，隔2000毫秒没有没返回值时发送TSC查询打印机状态指令
                 final GPThreadFactoryBuilder threadFactoryBuilder = new GPThreadFactoryBuilder("Timer");
-                final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1, threadFactoryBuilder);
+                final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+                        threadFactoryBuilder);
                 scheduledExecutorService.schedule(threadFactoryBuilder.newThread(new Runnable() {
                     @Override
                     public void run() {
                         if (currentPrinterCommand == null || currentPrinterCommand != GPPrinterCommand.ESC) {
                             Log.e(TAG, Thread.currentThread().getName());
-                            //发送TSC查询打印机状态指令
+                            // 发送TSC查询打印机状态指令
                             sendCommand = tsc;
                             Vector<Byte> data = new Vector<>(tsc.length);
                             for (int i = 0; i < tsc.length; i++) {
                                 data.add(tsc[i]);
                             }
                             sendDataImmediately(data);
-                            //开启计时器，隔2000毫秒打印机没有响应者停止读取打印机数据线程并且关闭端口
+                            // 开启计时器，隔2000毫秒打印机没有响应者停止读取打印机数据线程并且关闭端口
                             scheduledExecutorService.schedule(threadFactoryBuilder.newThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -555,7 +480,7 @@ public class GPDeviceConnFactoryManager {
         public void run() {
             try {
                 while (isRun) {
-                    //读取打印机返回信息
+                    // 读取打印机返回信息
                     int len = readDataImmediately(buffer);
                     if (len > 0) {
                         Message message = Message.obtain();

@@ -87,7 +87,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> detailPrint(BuildContext context, String hardwareAddress,
-      bool isPanda, bool isConnect) async {
+      bool isPanda, bool isConnect,
+      {int? index}) async {
     // You can add more language options other than ZPL and BZPL/ZPL II for printers
     // that don't support them.
     await showDialog(
@@ -139,12 +140,14 @@ class _MyAppState extends State<MyApp> {
 
                                   bool? value =
                                       await WiseBluetoothPrint.connectBluePrint(
-                                          hardwareAddress);
+                                          hardwareAddress, index ?? 0);
 
                                   if (value) {
                                     setState(() {
                                       pairedDevice.add(Devices(
-                                          hardwareAddress: hardwareAddress));
+                                          hardwareAddress: hardwareAddress,
+                                          type: "blueprint",
+                                          index: index));
                                     });
 
                                     setState(() {
@@ -199,7 +202,8 @@ class _MyAppState extends State<MyApp> {
                                   if (value) {
                                     setState(() {
                                       pairedDevice.add(Devices(
-                                          hardwareAddress: hardwareAddress));
+                                          hardwareAddress: hardwareAddress,
+                                          type: "panda"));
                                     });
 
                                     setState(() {
@@ -286,10 +290,11 @@ class _MyAppState extends State<MyApp> {
           } else {
             await WiseBluetoothPrint.disconnectBluePrint();
             final value = await WiseBluetoothPrint.connectBluePrint(
-                device.hardwareAddress ?? "");
+                device.hardwareAddress ?? "", device.index ?? 0);
 
             if (value) {
-              await WiseBluetoothPrint.printBluePrint(content);
+              await WiseBluetoothPrint.printBluePrint(
+                  content, device.index ?? 0);
             }
           }
         } catch (e) {
@@ -547,17 +552,27 @@ class _MyAppState extends State<MyApp> {
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () {
-                            detailPrint(
-                                context,
-                                _devices[index].hardwareAddress ?? "",
-                                _devices[index]
-                                        .name
-                                        ?.toLowerCase()
-                                        .contains("mpt") ??
-                                    false,
-                                pairedDevice.any((e) =>
-                                    e.hardwareAddress ==
-                                    _devices[index].hardwareAddress));
+                            if (pairedDevice
+                                    .where((e) => e.type == "blueprint")
+                                    .length ==
+                                3) {
+                              print("Gabisa nambah bos, max 4");
+                            } else {
+                              detailPrint(
+                                  context,
+                                  _devices[index].hardwareAddress ?? "",
+                                  _devices[index]
+                                          .name
+                                          ?.toLowerCase()
+                                          .contains("mpt") ??
+                                      false,
+                                  pairedDevice.any((e) =>
+                                      e.hardwareAddress ==
+                                      _devices[index].hardwareAddress),
+                                  index: pairedDevice
+                                      .where((e) => e.type == "blueprint")
+                                      .length);
+                            }
                           },
                           child: Card(
                             elevation: 1,
