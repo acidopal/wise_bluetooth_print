@@ -65,7 +65,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             case "printBluePrint": {
                 String content = call.argument("content");
                 int indexPrint = call.argument("index_print");
-                connectBluePrint(content, indexPrint, result);
+                printBluePrint(content, indexPrint, result);
                 break;
             }
             case "disconnectBluePrint": {
@@ -185,7 +185,9 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void disconnectBluePrint(int indexPrint, @NonNull Result result) {
-        GPDeviceConnFactoryManager.closePort(indexPrint);
+        if (GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint] != null) {
+            GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].closePort(indexPrint);
+        }
         result.success(true);
     }
 
