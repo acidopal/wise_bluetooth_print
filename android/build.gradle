@@ -1,4 +1,4 @@
-group 'com.example.wise_bluetooth_print'
+group 'com.inkanteen.print'
 version '1.0'
 
 buildscript {

@@ -1,4 +1,4 @@
-package com.example.wise_bluetooth_print.panda;
+package com.inkanteen.print.panda;
 
 import android.graphics.Bitmap;
 

@@ -1,4 +1,4 @@
-package com.example.wise_bluetooth_print;
+package com.inkanteen.print;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -11,10 +11,10 @@ import androidx.annotation.NonNull;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.wise_bluetooth_print.blueprint.GPDeviceConnFactoryManager;
-import com.example.wise_bluetooth_print.blueprint.GPThreadPool;
+import com.inkanteen.print.blueprint.DeviceConnFactoryManager;
+import com.inkanteen.print.blueprint.ThreadPool;
 import com.gprinter.command.EscCommand;
-import com.example.wise_bluetooth_print.panda.printerlibs_caysnpos;
+import com.inkanteen.print.panda.printerlibs_caysnpos;
 import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
@@ -35,7 +35,8 @@ import android.util.Base64;
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
     private MethodChannel channel;
     private Context context;
-
+    private ThreadPool threadPool;
+    
     private Pointer pandaPointer;
 
     @Override
@@ -124,32 +125,41 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     }
 
     private void connectBluePrint(String address, int indexPrint, @NonNull Result result) {
-        System.out.println("Address");
+
+        System.out.println("=============");
+        System.out.println("connectBluePrint");
         System.out.println(address);
-        new GPDeviceConnFactoryManager.Build()
+        System.out.println(indexPrint);
+        System.out.println("=============");
+        
+        new DeviceConnFactoryManager.Build()
                 .setId(indexPrint)
-                .setContext(context)
-                .setName("")
-                .setConnMethod(GPDeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
+                .setConnMethod(DeviceConnFactoryManager.CONN_METHOD.BLUETOOTH)
                 .setMacAddress(address)
                 .build();
 
-        GPThreadPool threadPool = GPThreadPool.getInstantiation();
-        threadPool.addTask(() -> {
-            try {
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].openPort();
-                result.success(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.success(false);
+        threadPool = ThreadPool.getInstantiation();
+        threadPool.addParallelTask(new Runnable() {
+            @Override
+            public void run() {
+                DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].openPort();
             }
         });
+
+        result.success(true);
     }
 
     private void printBluePrint(String content, int indexPrint, Result result) {
-        new Thread() {
+      threadPool = ThreadPool.getInstantiation();
+      threadPool.addParallelTask(new Runnable() {
             @Override
             public void run() {
+                System.out.println("=============");
+                System.out.println("content");
+                System.out.println(content);
+                System.out.println(indexPrint);
+                System.out.println("=============");
+
                 EscCommand esc = new EscCommand();
                 esc.addInitializePrinter();
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
@@ -162,31 +172,26 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                 esc.addText("PRINTING IMAGE\n");
 
-                try {
-                    Bitmap bitmap = Glide.with(context)
-                            .asBitmap()
-                            .load(R.drawable.carimage)
-                            .apply(new RequestOptions().override(200, 200).downsample(DownsampleStrategy.CENTER_INSIDE))
-                            .submit(200, 200)
-                            .get();
-                    esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
-                    esc.addRastBitImage(bitmap, 200, 0);
-                    esc.addText("\n\n\n\n");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                if (DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint] == null ||
+                        !DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].getConnState()) {
+                    System.out.println("=============");
+                    System.out.println("Device Undefined");
+                    System.out.println("=============");
+                    result.success(false);
+                }else{
+                    System.out.println("=============");
+                    System.out.println("On Printing");
+                    System.out.println("=============");
+                    DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].sendDataImmediately(esc.getCommand());
+                    result.success(true);
                 }
-
-                GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint]
-                        .sendDataImmediately(esc.getCommand());
-                result.success(true);
             }
-        }.start();
+        });
     }
 
     private void disconnectBluePrint(int indexPrint, @NonNull Result result) {
-        if (GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint] != null) {
-            GPDeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].closePort(indexPrint);
+        if (DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint] != null) {
+            DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].closePort(indexPrint);
         }
         result.success(true);
     }

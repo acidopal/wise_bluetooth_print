@@ -1,4 +1,4 @@
-package com.example.wise_bluetooth_print_example;
+package com.inkanteen.print_example;
 
 import io.flutter.embedding.android.FlutterActivity;
 

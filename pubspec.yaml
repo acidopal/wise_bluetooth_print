@@ -22,5 +22,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.wise_bluetooth_print
+        package: com.inkanteen.print
         pluginClass: WiseBluetoothPrintPlugin
