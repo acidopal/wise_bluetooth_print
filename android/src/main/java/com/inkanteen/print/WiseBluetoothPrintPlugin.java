@@ -1,5 +1,6 @@
 package com.inkanteen.print;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -23,17 +24,30 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import android.util.Log;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.EventSink;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
+import android.content.Intent;
+import android.content.IntentFilter;
+
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 
+import android.content.BroadcastReceiver;
+
 public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandler {
+    private static final String TAG = "WiseBluetoothPrintPlugin";
     private MethodChannel channel;
+    private EventChannel stateChannel;
+    private Activity activity;
+
     private Context context;
     private ThreadPool threadPool;
     
@@ -41,9 +55,11 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-        context = flutterPluginBinding.getApplicationContext();
-        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
+        this.context = flutterPluginBinding.getApplicationContext();
+        this.channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print");
+        this.stateChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "wise_bluetooth_print/state");
         channel.setMethodCallHandler(this);
+        stateChannel.setStreamHandler(stateStreamHandler);
     }
 
     @Override
@@ -66,7 +82,8 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
             case "printBluePrint": {
                 String content = call.argument("content");
                 int indexPrint = call.argument("index_print");
-                printBluePrint(content, indexPrint, result);
+                String imageUrl = call.argument("imageUrl");
+                printBluePrint(content, indexPrint, imageUrl, result);
                 break;
             }
             case "disconnectBluePrint": {
@@ -149,7 +166,7 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
         result.success(true);
     }
 
-    private void printBluePrint(String content, int indexPrint, Result result) {
+    private void printBluePrint(String content, int indexPrint, String imageUrl, Result result) {
       threadPool = ThreadPool.getInstantiation();
       threadPool.addParallelTask(new Runnable() {
             @Override
@@ -165,12 +182,32 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.LEFT);
                 esc.addText(content + "\n");
                 esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
-                esc.addText("CENTER TEXT\n");
-                esc.addSelectJustification(EscCommand.JUSTIFICATION.RIGHT);
-                esc.addText("RIGHT TEXT\n\n\n");
-
-                esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
                 esc.addText("PRINTING IMAGE\n");
+
+                 if (imageUrl != null) {
+                    try {
+                        byte[] imageData = Base64.decode(imageUrl, Base64.DEFAULT);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+
+                        if (bitmap != null) {
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            int page_width = 384;
+                            int dstw = width;
+                            int dsth = height;
+                            if (dstw > page_width) {
+                                dstw = page_width;
+                                dsth = (int) (dstw * ((double) height / width));
+                            }
+
+                            esc.addSelectJustification(EscCommand.JUSTIFICATION.CENTER);
+                            esc.addRastBitImage(bitmap, dstw, dsth);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        esc.addText("FAILED PRINTING IMAGE\nerrormessage : " + e.getMessage());
+                    }
+                }
 
                 if (DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint] == null ||
                         !DeviceConnFactoryManager.getDeviceConnFactoryManagers()[indexPrint].getConnState()) {
@@ -288,4 +325,42 @@ public class WiseBluetoothPrintPlugin implements FlutterPlugin, MethodCallHandle
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
     }
+
+    private final StreamHandler stateStreamHandler = new StreamHandler() {
+    private EventSink sink;
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        final String action = intent.getAction();
+        Log.d(TAG, "stateStreamHandler, current action: " + action);
+
+        if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+          threadPool = null;
+          sink.success(intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1));
+        } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+          sink.success(1);
+        } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+          threadPool = null;
+          sink.success(0);
+        }
+      }
+    };
+
+    @Override
+    public void onListen(Object o, EventSink eventSink) {
+      sink = eventSink;
+      IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+      filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+      filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+      filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+      activity.registerReceiver(mReceiver, filter);
+    }
+
+    @Override
+    public void onCancel(Object o) {
+      sink = null;
+      activity.unregisterReceiver(mReceiver);
+    }
+  };
 }

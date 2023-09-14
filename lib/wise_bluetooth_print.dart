@@ -35,10 +35,12 @@ class WiseBluetoothPrint {
     return ret;
   }
 
-  static Future<bool> printBluePrint(String content, int indexPrint) async {
+  static Future<bool> printBluePrint(String content, int indexPrint,
+      {String? imageUrl}) async {
     final Map<String, dynamic> params = <String, dynamic>{
       'content': content,
       'index_print': indexPrint,
+      'imageUrl': imageUrl,
     };
     var ret = await _channel.invokeMethod('printBluePrint', params);
     return ret;

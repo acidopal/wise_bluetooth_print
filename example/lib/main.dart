@@ -292,12 +292,16 @@ class _MyAppState extends State<MyApp> {
                 await WiseBluetoothPrint.printPanda(
                   device.hardwareAddress ?? "",
                   content,
-                  imageUrl: (type == "receipt" && image != null) ? image : null,
+                  imageUrl: (type == "receipt" && image != null) ? image : null
                 );
               }
             }
           } else {
-            await WiseBluetoothPrint.printBluePrint(content, device.index ?? 0);
+            await WiseBluetoothPrint.printBluePrint(
+                  content,
+                  device.index ?? 0,
+                  imageUrl: (type == "receipt" && image != null) ? image : null
+              );
           }
         } catch (e) {
           print(e.toString());

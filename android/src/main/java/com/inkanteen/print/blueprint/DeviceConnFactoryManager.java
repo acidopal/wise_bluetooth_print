@@ -149,9 +149,14 @@ public class DeviceConnFactoryManager {
      */
     public void openPort() {
         deviceConnFactoryManagers[id].isOpenPort = false;
-
+        sendStateBroadcast(CONN_STATE_CONNECTING);
         switch (deviceConnFactoryManagers[id].connMethod) {
             case BLUETOOTH:
+                System.out.println("======================");
+                System.out.println("Conecting Device");
+                System.out.println("id -> " + id);
+                System.out.println("macAddress -> " + macAddress);
+                System.out.println("======================");
                 mPort = new BluetoothPort(macAddress);
                 isOpenPort = deviceConnFactoryManagers[id].mPort.openPort();
                 break;
@@ -505,6 +510,11 @@ public class DeviceConnFactoryManager {
                         bundle.putByteArray(READ_BUFFER_ARRAY, buffer); //数据
                         message.setData(bundle);
                         mHandler.sendMessage(message);
+                    }else{
+                         if (deviceConnFactoryManagers[id] != null) {
+                            closePort(id);
+                            mHandler.obtainMessage(Constant.abnormal_Disconnection).sendToTarget();
+                        }
                     }
                 }
             } catch (Exception e) {//异常断开
